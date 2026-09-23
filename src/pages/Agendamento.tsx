@@ -164,7 +164,7 @@ export default function Agendamento() {
     settings.booking_enabled === false
 
   return (
-    <div className="min-h-screen bg-[#FAF7F5] pt-28 sm:pt-36 pb-20">
+    <div className="min-h-[calc(100vh-5rem)] bg-[#FAF7F5] pt-8 sm:pt-14 pb-20">
       
       {/* Banner Superior da Página */}
       <div className="max-w-4xl mx-auto px-5 sm:px-8 mb-8 text-center sm:text-left">

@@ -4,7 +4,7 @@ export default function HeroSection() {
   return (
     <section
       id="inicio"
-      className="relative min-h-[92vh] sm:min-h-screen flex items-center justify-center pt-28 sm:pt-36 pb-16 sm:pb-24 overflow-hidden bg-gradient-to-b from-[#FAF7F5] via-[#FAF7F5] to-[#F5ECE7]"
+      className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center pt-8 sm:pt-16 pb-16 sm:pb-24 overflow-hidden bg-gradient-to-b from-[#FAF7F5] via-[#FAF7F5] to-[#F5ECE7]"
       aria-labelledby="hero-title"
     >
       {/* Elementos Gráficos Sutis de Fundo */}
