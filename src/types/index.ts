@@ -66,6 +66,16 @@ export interface ClinicSettings {
 export interface UpdateClinicSettingsPayload {
   p_clinic_name?: string
   clinic_name?: string
+  p_professional_name?: string
+  professional_name?: string
+  p_booking_enabled?: boolean
+  booking_enabled?: boolean
+  p_min_notice_hours?: number
+  min_notice_hours?: number
+  p_max_advance_days?: number
+  max_advance_days?: number
+  p_slot_interval_minutes?: number
+  slot_interval_minutes?: number
   [key: string]: unknown
 }
 

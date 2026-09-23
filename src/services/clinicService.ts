@@ -65,11 +65,26 @@ export async function updateClinicSettings(
   payload: UpdateClinicSettingsPayload
 ): Promise<void> {
   const clinicName = payload.p_clinic_name ?? payload.clinic_name ?? ''
-  const { error } = await supabase.rpc('update_clinic_settings', {
+  const professionalName = payload.p_professional_name ?? (payload.professional_name as string | undefined)
+  const bookingEnabled = payload.p_booking_enabled ?? (payload.booking_enabled as boolean | undefined)
+  const minNoticeHours = payload.p_min_notice_hours ?? (payload.min_notice_hours as number | undefined)
+  const maxAdvanceDays = payload.p_max_advance_days ?? (payload.max_advance_days as number | undefined)
+  const slotIntervalMinutes = payload.p_slot_interval_minutes ?? (payload.slot_interval_minutes as number | undefined)
+
+  const params: Record<string, unknown> = {
     p_clinic_name: clinicName,
-  })
+  }
+
+  if (professionalName !== undefined) params.p_professional_name = professionalName
+  if (bookingEnabled !== undefined) params.p_booking_enabled = bookingEnabled
+  if (minNoticeHours !== undefined) params.p_min_notice_hours = minNoticeHours
+  if (maxAdvanceDays !== undefined) params.p_max_advance_days = maxAdvanceDays
+  if (slotIntervalMinutes !== undefined) params.p_slot_interval_minutes = slotIntervalMinutes
+
+  const { error } = await supabase.rpc('update_clinic_settings', params)
   if (error) throw error
 }
+
 
 // ── Admin: Gestão de Serviços ─────────────────────────────────
 
