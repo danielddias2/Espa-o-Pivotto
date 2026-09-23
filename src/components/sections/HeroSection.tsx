@@ -72,14 +72,14 @@ export default function HeroSection() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
               <Link
                 to="/agendamento"
-                className="inline-flex items-center justify-center px-8 py-4 text-sm font-semibold tracking-wider uppercase text-white bg-[#7D3B7C] hover:bg-[#672B66] rounded-full shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 text-center"
+                className="inline-flex items-center justify-center px-8 py-4 text-sm font-semibold tracking-wider uppercase text-white bg-[#7D3B7C] hover:bg-[#672B66] active:scale-98 rounded-full shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7D3B7C]"
               >
                 Agendar Atendimento Online
               </Link>
 
               <a
                 href="#noivas"
-                className="inline-flex items-center justify-center px-7 py-4 text-sm font-medium tracking-wide text-[#1C181D] bg-white/70 hover:bg-white border border-[#EAE2DC] rounded-full shadow-xs hover:shadow-sm transition-all duration-200 text-center"
+                className="inline-flex items-center justify-center px-7 py-4 text-sm font-medium tracking-wide text-[#1C181D] bg-white/80 hover:bg-white active:scale-98 border border-[#EAE2DC] rounded-full shadow-xs hover:shadow-sm transition-all duration-200 text-center hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7D3B7C]"
               >
                 Conhecer Experiência Noivas
               </a>
@@ -100,29 +100,12 @@ export default function HeroSection() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
               
               {/* Badge Sobreposto na Imagem */}
-              <div className="absolute bottom-4 left-4 right-4 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-white/60 shadow-lg">
+              <div className="absolute bottom-4 left-4 right-4 p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-white/60 shadow-lg">
                 <p className="text-[10px] uppercase tracking-[0.2em] text-[#7D3B7C] font-semibold">
                   O Cuidado que o Seu Sonho Merece
                 </p>
                 <p className="text-sm font-display text-[#1C181D] italic mt-0.5">
                   Produções completas de beleza para o grande dia.
-                </p>
-              </div>
-            </div>
-
-            {/* Card Flutuante Secundário: Josielly Pivotto */}
-            <div className="absolute -bottom-6 -left-4 sm:-left-8 bg-white p-3 sm:p-3.5 rounded-2xl shadow-xl border border-[#EAE2DC] flex items-center gap-3 max-w-[230px] hidden sm:flex">
-              <img
-                src="/images/about/josielly-studio.jpg"
-                alt="Josielly Pivotto"
-                className="w-12 h-12 rounded-xl object-cover"
-              />
-              <div className="text-left">
-                <p className="text-xs font-semibold text-[#1C181D] leading-tight">
-                  Josielly Pivotto
-                </p>
-                <p className="text-[10px] text-[#756A73] uppercase tracking-wider mt-0.5">
-                  Beleza com Propósito
                 </p>
               </div>
             </div>
