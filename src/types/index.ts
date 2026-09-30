@@ -60,7 +60,8 @@ export interface CreateProfessionalPayload {
 }
 
 export interface UpdateProfessionalPayload {
-  p_professional_id: string
+  p_professional_id?: string
+  p_id?: string
   p_name: string
   p_photo_url?: string | null
   p_specialty?: string | null

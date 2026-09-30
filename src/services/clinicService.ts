@@ -275,15 +275,33 @@ export async function createProfessional(
 export async function updateProfessional(
   payload: UpdateProfessionalPayload
 ): Promise<Professional> {
-  const { data, error } = await supabase.rpc('update_professional', {
-    p_professional_id: payload.p_professional_id,
+  const idValue = (payload.p_id || payload.p_professional_id) as string
+  const primaryParams = {
+    p_id: idValue,
     p_name: payload.p_name,
     p_photo_url: payload.p_photo_url ?? null,
     p_specialty: payload.p_specialty ?? null,
     p_bio: payload.p_bio ?? null,
     p_whatsapp: payload.p_whatsapp ?? null,
-  })
-  if (error) throw error
+  }
+
+  const { data, error } = await supabase.rpc('update_professional', primaryParams)
+  if (error) {
+    if (error.message?.includes('p_professional_id')) {
+      const fallbackParams = {
+        p_professional_id: idValue,
+        p_name: payload.p_name,
+        p_photo_url: payload.p_photo_url ?? null,
+        p_specialty: payload.p_specialty ?? null,
+        p_bio: payload.p_bio ?? null,
+        p_whatsapp: payload.p_whatsapp ?? null,
+      }
+      const fallbackResult = await supabase.rpc('update_professional', fallbackParams)
+      if (fallbackResult.error) throw fallbackResult.error
+      return fallbackResult.data as Professional
+    }
+    throw error
+  }
   return data as Professional
 }
 
@@ -292,10 +310,20 @@ export async function setProfessionalActive(
   active: boolean
 ): Promise<void> {
   const { error } = await supabase.rpc('set_professional_active', {
-    p_professional_id: professionalId,
+    p_id: professionalId,
     p_active: active,
   })
-  if (error) throw error
+  if (error) {
+    if (error.message?.includes('p_professional_id')) {
+      const fallback = await supabase.rpc('set_professional_active', {
+        p_professional_id: professionalId,
+        p_active: active,
+      })
+      if (fallback.error) throw fallback.error
+      return
+    }
+    throw error
+  }
 }
 
 export async function setProfessionalServices(

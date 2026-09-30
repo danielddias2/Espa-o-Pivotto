@@ -64,5 +64,10 @@ export function getFriendlyError(error: unknown): string {
     console.error('[Espaço Pivotto] Erro:', error)
   }
 
+  // Se o erro tiver uma mensagem real retornada pelo Supabase/PostgREST/Storage, exibe-a
+  if (raw && raw.trim() && !raw.includes('[object Object]')) {
+    return raw.trim()
+  }
+
   return 'Ocorreu um erro inesperado. Tente novamente em alguns instantes.'
 }
