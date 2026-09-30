@@ -1,6 +1,11 @@
-import { useState, useEffect, useId } from 'react'
+import { useState, useEffect, useRef, useId } from 'react'
 import type { Service } from '@/types'
 import { createService, updateService } from '@/services/clinicService'
+import {
+  uploadServiceImage,
+  deleteServiceImage,
+  validateImageFile,
+} from '@/services/storageService'
 import { slugify, isValidSlug, formatCurrency } from '@/utils/formatters'
 import { getFriendlyError } from '@/utils/errorMessages'
 import Button from '@/components/ui/Button'
@@ -28,6 +33,8 @@ export default function ServiceModal({
   onSuccess,
 }: ServiceModalProps) {
   const isEdit = service !== null
+  const modalTitleId = useId()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState<FormState>({
     name: '',
@@ -43,7 +50,12 @@ export default function ServiceModal({
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const modalTitleId = useId()
+  // Estado de imagem
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [removeImage, setRemoveImage] = useState(false)
+  const [showUrlInput, setShowUrlInput] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
@@ -58,6 +70,7 @@ export default function ServiceModal({
         image_url: service.image_url || '',
       })
       setTouchedSlug(true)
+      setImagePreview(service.image_url || null)
     } else {
       setForm({
         name: '',
@@ -68,9 +81,15 @@ export default function ServiceModal({
         image_url: '',
       })
       setTouchedSlug(false)
+      setImagePreview(null)
     }
+
+    setSelectedFile(null)
+    setRemoveImage(false)
+    setShowUrlInput(false)
     setSubmitError(null)
     setErrors({})
+    setUploading(false)
   }, [isOpen, service])
 
   useEffect(() => {
@@ -104,6 +123,38 @@ export default function ServiceModal({
     setForm((prev) => ({ ...prev, slug: raw }))
     if (errors.slug) {
       setErrors((prev) => ({ ...prev, slug: '' }))
+    }
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const validation = validateImageFile(file)
+    if (!validation.valid) {
+      setSubmitError(validation.error || 'Arquivo inválido')
+      return
+    }
+
+    setSubmitError(null)
+    setSelectedFile(file)
+    setRemoveImage(false)
+
+    // Cria preview local
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      setImagePreview(event.target?.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function handleRemoveImage() {
+    setSelectedFile(null)
+    setImagePreview(null)
+    setForm((prev) => ({ ...prev, image_url: '' }))
+    setRemoveImage(true)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
     }
   }
 
@@ -147,37 +198,67 @@ export default function ServiceModal({
     const dur = parseInt(form.duration_minutes, 10)
     const prc = form.price.trim() !== '' ? parseFloat(form.price.replace(',', '.')) : null
     const desc = form.description.trim() || null
-    const img = form.image_url.trim() || null
     const cleanSlug = form.slug.trim()
 
     try {
+      // Guarda a URL da imagem antiga para exclusão posterior
+      const oldImageUrl = service?.image_url || null
+
+      let finalImageUrl: string | null = form.image_url.trim() || null
+
+      // Se um novo arquivo foi selecionado, envia para o Supabase Storage
+      if (selectedFile) {
+        setUploading(true)
+        try {
+          finalImageUrl = await uploadServiceImage(selectedFile, service?.id)
+        } catch (uploadErr) {
+          const msg = uploadErr instanceof Error ? uploadErr.message : 'Falha no upload da imagem'
+          setSubmitError(msg)
+          setSubmitting(false)
+          setUploading(false)
+          return
+        }
+        setUploading(false)
+      } else if (removeImage) {
+        finalImageUrl = null
+      }
+
+      let saved: Service
+
       if (isEdit && service) {
-        const updated = await updateService({
+        saved = await updateService({
           p_service_id: service.id,
           p_name: form.name.trim(),
           p_slug: cleanSlug,
           p_duration_minutes: dur,
           p_price: prc,
           p_description: desc,
-          p_image_url: img,
+          p_image_url: finalImageUrl,
         })
-        onSuccess(updated, true)
+
+        // Só remove a imagem antiga DEPOIS de confirmar que a nova foi salva
+        if (oldImageUrl && oldImageUrl !== finalImageUrl) {
+          deleteServiceImage(oldImageUrl)
+        }
+
+        onSuccess(saved, true)
       } else {
-        const created = await createService({
+        saved = await createService({
           p_name: form.name.trim(),
           p_slug: cleanSlug,
           p_duration_minutes: dur,
           p_price: prc,
           p_description: desc,
-          p_image_url: img,
+          p_image_url: finalImageUrl,
         })
-        onSuccess(created, false)
+        onSuccess(saved, false)
       }
       onClose()
     } catch (err) {
       setSubmitError(getFriendlyError(err))
     } finally {
       setSubmitting(false)
+      setUploading(false)
     }
   }
 
@@ -190,12 +271,14 @@ export default function ServiceModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby={modalTitleId}
+      onClick={onClose}
     >
       <div
-        className="bg-[#FAF7F5] border border-[#EAE2DC] w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+        className="bg-[#FAF7F5] border border-[#EAE2DC] w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col my-8"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 sm:px-8 pt-7 pb-5 border-b border-[#EAE2DC] bg-white flex items-start justify-between">
+        {/* Cabeçalho */}
+        <div className="px-6 sm:px-8 pt-7 pb-5 border-b border-[#EAE2DC] bg-white flex items-start justify-between shrink-0">
           <div>
             <p className="text-[10px] tracking-[0.2em] uppercase text-[#7D3B7C] font-semibold mb-1">
               {isEdit ? 'Editar Procedimento' : 'Novo Procedimento'}
@@ -218,16 +301,122 @@ export default function ServiceModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-4">
+        {/* Formulário com scroll */}
+        <form onSubmit={handleSubmit} noValidate className="p-6 sm:p-8 space-y-5 overflow-y-auto max-h-[calc(85vh-130px)]">
           {submitError && (
             <div
               role="alert"
-              className="p-3.5 bg-red-50 border border-red-200 text-xs text-red-700 rounded-xl"
+              className="p-4 bg-rose-50 border border-rose-200 text-xs sm:text-sm text-rose-700 rounded-xl leading-relaxed"
             >
               {submitError}
             </div>
           )}
 
+          {/* 1. Imagem do Procedimento */}
+          <div className="space-y-3">
+            <label className="block text-xs uppercase tracking-wider text-[#756A73] font-semibold">
+              Foto do Procedimento <span className="text-[10px] text-[#A1A1AA] lowercase font-normal">(opcional)</span>
+            </label>
+
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 bg-white border border-[#EAE2DC] rounded-2xl">
+              {/* Preview */}
+              <div className="relative w-24 h-24 rounded-xl border-2 border-[#7D3B7C]/20 overflow-hidden bg-[#FAF0F8] flex items-center justify-center shrink-0 shadow-xs">
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Preview do procedimento"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      ;(e.target as HTMLImageElement).style.display = 'none'
+                    }}
+                  />
+                ) : (
+                  <span className="text-[#7D3B7C] opacity-50">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <path d="m21 15-5-5L5 21" />
+                    </svg>
+                  </span>
+                )}
+                {uploading && (
+                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-[#7D3B7C] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+              </div>
+
+              {/* Controles de Imagem */}
+              <div className="flex-1 space-y-2 text-center sm:text-left">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={submitting}
+                    className="px-3.5 py-1.5 text-xs font-semibold bg-[#FAF0F8] text-[#7D3B7C] hover:bg-[#F3E5F1] rounded-xl border border-[#7D3B7C]/20 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {imagePreview ? 'Trocar imagem' : 'Enviar imagem'}
+                  </button>
+
+                  {imagePreview && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      disabled={submitting}
+                      className="px-3.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl border border-rose-200 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      Remover imagem
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setShowUrlInput((v) => !v)}
+                    className="text-[11px] text-[#736371] hover:text-[#2D242D] underline ml-1 cursor-pointer"
+                  >
+                    {showUrlInput ? 'Ocultar URL' : 'Informar URL'}
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-[#A1A1AA]">
+                  Formatos aceitos: JPG, PNG ou WebP (máx. 5 MB).
+                </p>
+
+                {uploading && (
+                  <p className="text-[11px] text-[#7D3B7C] font-medium animate-pulse">
+                    Enviando imagem...
+                  </p>
+                )}
+
+                {showUrlInput && (
+                  <div className="pt-2 animate-fade-in">
+                    <input
+                      type="url"
+                      placeholder="https://exemplo.com/foto.jpg"
+                      value={form.image_url}
+                      onChange={(e) => {
+                        setForm((prev) => ({ ...prev, image_url: e.target.value }))
+                        setImagePreview(e.target.value || null)
+                        setSelectedFile(null)
+                        setRemoveImage(false)
+                      }}
+                      className="w-full px-3 py-1.5 text-xs border border-[#EAE2DC] bg-[#FAF7F5] rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C]"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Nome do Procedimento */}
           <div className="space-y-1">
             <label
               htmlFor="svc-name"
@@ -250,6 +439,7 @@ export default function ServiceModal({
             )}
           </div>
 
+          {/* 3. Slug */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label
@@ -278,6 +468,7 @@ export default function ServiceModal({
             )}
           </div>
 
+          {/* 4. Duração e Preço */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label
@@ -330,6 +521,7 @@ export default function ServiceModal({
             </div>
           </div>
 
+          {/* 5. Descrição */}
           <div className="space-y-1">
             <label
               htmlFor="svc-desc"
@@ -347,6 +539,7 @@ export default function ServiceModal({
             />
           </div>
 
+          {/* Botões de Ação */}
           <div className="pt-3 border-t border-[#EAE2DC] flex items-center justify-end gap-3">
             <button
               type="button"

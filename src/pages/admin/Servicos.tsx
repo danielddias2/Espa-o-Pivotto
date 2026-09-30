@@ -267,6 +267,21 @@ export default function AdminServicos() {
                     : 'border-stone-200 bg-stone-50/50 opacity-75',
                 ].join(' ')}
               >
+                {/* Miniatura da imagem */}
+                {svc.image_url && (
+                  <div className="aspect-[16/9] -mx-5 -mt-5 mb-4 rounded-t-2xl overflow-hidden bg-[#FAF0F8]">
+                    <img
+                      src={svc.image_url}
+                      alt={svc.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        ;(e.target as HTMLImageElement).parentElement!.style.display = 'none'
+                      }}
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>

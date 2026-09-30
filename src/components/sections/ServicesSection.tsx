@@ -220,6 +220,21 @@ export default function ServicesSection() {
                         isMobileHidden ? 'hidden sm:flex' : 'flex animate-fade-in',
                       ].join(' ')}
                     >
+                      {/* Imagem do procedimento */}
+                      {service.image_url && (
+                        <div className="aspect-[16/9] -mx-6 sm:-mx-7 -mt-6 sm:-mt-7 mb-4 rounded-t-2xl overflow-hidden bg-[#FAF0F8]">
+                          <img
+                            src={service.image_url}
+                            alt={service.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                            onError={(e) => {
+                              ;(e.target as HTMLImageElement).parentElement!.style.display = 'none'
+                            }}
+                          />
+                        </div>
+                      )}
+
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-xs text-[#756A73]">
                           <span className="uppercase tracking-wider font-medium">

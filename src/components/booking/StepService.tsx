@@ -72,6 +72,21 @@ export default function StepService({
                     : 'border-[#EAE2DC] bg-white hover:border-[#7D3B7C]/40 hover:bg-[#FAF7F5]',
                 ].join(' ')}
               >
+                {/* Imagem do procedimento */}
+                {service.image_url && (
+                  <div className="aspect-[16/9] -mx-6 -mt-6 mb-3 rounded-t-2xl overflow-hidden bg-[#FAF0F8]">
+                    <img
+                      src={service.image_url}
+                      alt={service.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        ;(e.target as HTMLImageElement).parentElement!.style.display = 'none'
+                      }}
+                    />
+                  </div>
+                )}
+
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <span className="text-[10px] uppercase tracking-widest text-[#7D3B7C] font-semibold">
