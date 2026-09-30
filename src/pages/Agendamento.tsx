@@ -203,6 +203,11 @@ export default function Agendamento() {
   return (
     <div className="min-h-[calc(100vh-5rem)] bg-[#FAF7F5] pt-8 sm:pt-14 pb-20">
       {/* Banner Superior da Página */}
+<<<<<<< HEAD
+=======
+      
+>>>>>>> 2151f49a3378e3161c62158da3fdb9b4e6c3cf1b
+      {/* Banner Superior da Página */}
       <div className="max-w-4xl mx-auto px-5 sm:px-8 mb-8 text-center sm:text-left">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F4EDE8] text-[11px] uppercase tracking-wider text-[#7D3B7C] font-semibold mb-3">
           <span>Espaço Pivotto</span>
