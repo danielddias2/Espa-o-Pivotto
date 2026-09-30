@@ -58,6 +58,7 @@ const CATEGORIES: ServiceCategory[] = [
 export default function ServicesSection() {
   const { services, state, refetch } = useServices()
   const [activeTab, setActiveTab] = useState<string>('cabelo')
+  const [showAllMobileServices, setShowAllMobileServices] = useState<boolean>(false)
 
   const currentCategory = CATEGORIES.find((c) => c.id === activeTab) || CATEGORIES[0]
 
@@ -207,43 +208,69 @@ export default function ServicesSection() {
           )}
 
           {state === 'success' && services.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {services.map((service) => (
-                <div
-                  key={service.id}
-                  className="bg-white p-6 sm:p-7 rounded-2xl border border-[#EAE2DC] hover:border-[#7D3B7C]/40 hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-4"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-[#756A73]">
-                      <span className="uppercase tracking-wider">
-                        {formatDuration(service.duration_minutes)}
-                      </span>
-                      {service.price != null && (
-                        <span className="font-medium text-[#1C181D]">
-                          {formatCurrency(service.price)}
-                        </span>
-                      )}
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {services.map((service, index) => {
+                  const isMobileHidden = !showAllMobileServices && index >= 3
+                  return (
+                    <div
+                      key={service.id}
+                      className={[
+                        'bg-white p-6 sm:p-7 rounded-2xl border border-[#EAE2DC] hover:border-[#7D3B7C]/40 hover:shadow-md transition-all duration-300 flex flex-col justify-between space-y-4 group',
+                        isMobileHidden ? 'hidden sm:flex' : 'flex animate-fade-in',
+                      ].join(' ')}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs text-[#756A73]">
+                          <span className="uppercase tracking-wider font-medium">
+                            {formatDuration(service.duration_minutes)}
+                          </span>
+                          {service.price != null && (
+                            <span className="font-semibold text-[#1C181D]">
+                              {formatCurrency(service.price)}
+                            </span>
+                          )}
+                        </div>
+
+                        <h4 className="font-display text-xl text-[#1C181D] group-hover:text-[#7D3B7C] transition-colors">
+                          {service.name}
+                        </h4>
+
+                        {service.description && (
+                          <p className="text-xs sm:text-sm text-[#756A73] font-light leading-relaxed line-clamp-3">
+                            {service.description}
+                          </p>
+                        )}
+                      </div>
+
+                      <Link
+                        to={`/agendamento?servico=${service.id}`}
+                        className="inline-flex items-center justify-center w-full py-2.5 px-4 text-xs uppercase tracking-wider font-semibold text-[#7D3B7C] bg-[#F9F0F7] hover:bg-[#7D3B7C] hover:text-white active:scale-98 rounded-full transition-all duration-200 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7D3B7C]"
+                      >
+                        Agendar Horário
+                      </Link>
                     </div>
+                  )
+                })}
+              </div>
 
-                    <h4 className="font-display text-xl text-[#1C181D]">
-                      {service.name}
-                    </h4>
-
-                    {service.description && (
-                      <p className="text-xs sm:text-sm text-[#756A73] font-light leading-relaxed line-clamp-3">
-                        {service.description}
-                      </p>
-                    )}
-                  </div>
-
-                  <Link
-                    to={`/agendamento?servico=${service.id}`}
-                    className="inline-flex items-center justify-center w-full py-2.5 px-4 text-xs uppercase tracking-wider font-semibold text-[#7D3B7C] bg-[#F9F0F7] hover:bg-[#7D3B7C] hover:text-white rounded-full transition-colors text-center"
+              {/* Botão de controle exclusivo do mobile (quando houver mais de 3 serviços) */}
+              {services.length > 3 && (
+                <div className="flex sm:hidden justify-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllMobileServices((prev) => !prev)}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs uppercase tracking-wider font-semibold text-[#7D3B7C] bg-white border border-[#EAE2DC] shadow-2xs hover:bg-[#FAF0F8] active:scale-95 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7D3B7C]"
+                    aria-expanded={showAllMobileServices}
                   >
-                    Agendar Horário
-                  </Link>
+                    <span>
+                      {showAllMobileServices
+                        ? 'Mostrar menos serviços ↑'
+                        : `Ver mais procedimentos (${services.length - 3} restantes) ↓`}
+                    </span>
+                  </button>
                 </div>
-              ))}
+              )}
             </div>
           )}
 

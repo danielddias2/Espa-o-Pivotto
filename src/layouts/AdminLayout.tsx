@@ -3,6 +3,8 @@ import { Outlet, Navigate, Link, useLocation } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 import Loader from '@/components/ui/Loader'
+import Button from '@/components/ui/Button'
+import { checkIsAdmin } from '@/services/authService'
 
 const ADMIN_NAV = [
   { 
@@ -53,6 +55,16 @@ const ADMIN_NAV = [
     )
   },
   { 
+    label: 'Profissionais', 
+    to: '/admin/profissionais',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    )
+  },
+  { 
     label: 'Configurações', 
     to: '/admin/configuracoes',
     icon: (
@@ -66,16 +78,27 @@ const ADMIN_NAV = [
 
 export default function AdminLayout() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
 
   useEffect(() => {
+    async function verifyAuth(s: Session | null) {
+      setSession(s)
+      if (s) {
+        const authorized = await checkIsAdmin()
+        setIsAdmin(authorized)
+      } else {
+        setIsAdmin(null)
+      }
+    }
+
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
+      verifyAuth(data.session)
     })
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s)
+      verifyAuth(s)
     })
 
     return () => listener.subscription.unsubscribe()
@@ -85,16 +108,61 @@ export default function AdminLayout() {
     setMobileMenuOpen(false)
   }, [location.pathname])
 
-  if (session === undefined) {
+  // Carregando sessão inicial
+  if (session === undefined || (session && isAdmin === null)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FAF7F5]">
-        <Loader label="Verificando acesso ao painel..." />
+        <Loader label="Verificando credenciais e permissões..." />
       </div>
     )
   }
 
+  // Não autenticado -> redireciona para login
   if (!session) {
     return <Navigate to="/admin/login" state={{ from: location }} replace />
+  }
+
+  // Autenticado mas NÃO é administrador -> Acesso Negado (403)
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF7F5] px-5 py-12">
+        <div className="w-full max-w-md bg-white border border-[#EBE3DC] rounded-3xl p-8 sm:p-10 shadow-sm text-center space-y-6">
+          <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="font-display text-2xl text-[#2D242D]">
+              Acesso Não Autorizado
+            </h1>
+            <p className="text-xs text-[#736371] leading-relaxed">
+              A conta conectada (<strong className="text-[#2D242D]">{session.user.email}</strong>) não possui permissões administrativas para gerenciar o Espaço Pivotto.
+            </p>
+          </div>
+
+          <div className="pt-2 flex flex-col gap-2.5">
+            <Button
+              variant="outline"
+              size="md"
+              className="w-full justify-center text-rose-700 hover:bg-rose-50 border-rose-200"
+              onClick={() => supabase.auth.signOut()}
+            >
+              Encerrar sessão
+            </Button>
+            <Link
+              to="/"
+              className="text-xs text-[#7D3B7C] hover:underline font-medium inline-block py-1"
+            >
+              ← Voltar ao site público
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

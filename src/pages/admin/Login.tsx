@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { checkIsAdmin } from '@/services/authService'
 import Button from '@/components/ui/Button'
 
 export default function AdminLogin() {
@@ -11,12 +12,15 @@ export default function AdminLogin() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Redireciona se já autenticado
+  // Redireciona apenas se já autenticado E for administrador
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (data.session) {
-        const from = (location.state as { from?: Location })?.from?.pathname ?? '/admin'
-        navigate(from, { replace: true })
+        const isAdmin = await checkIsAdmin()
+        if (isAdmin) {
+          const from = (location.state as { from?: Location })?.from?.pathname ?? '/admin'
+          navigate(from, { replace: true })
+        }
       }
     })
   }, [navigate, location])
@@ -27,17 +31,26 @@ export default function AdminLogin() {
     setLoading(true)
 
     const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim(),
       password,
     })
 
-    setLoading(false)
-
     if (authError) {
+      setLoading(false)
       setError('E-mail ou senha incorretos. Verifique suas credenciais de acesso.')
       return
     }
 
+    // Validação estrita de privilégios de administrador
+    const isAdmin = await checkIsAdmin()
+    if (!isAdmin) {
+      await supabase.auth.signOut()
+      setLoading(false)
+      setError('Acesso negado: esta conta não possui permissão de administrador.')
+      return
+    }
+
+    setLoading(false)
     const from = (location.state as { from?: Location })?.from?.pathname ?? '/admin'
     navigate(from, { replace: true })
   }

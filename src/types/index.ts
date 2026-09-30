@@ -31,6 +31,40 @@ export interface UpdateServicePayload {
   p_image_url?: string | null
 }
 
+// ── Profissionais do Studio ──────────────────────────────────
+export interface Professional {
+  id: string
+  name: string
+  photo_url: string | null
+  specialty: string | null
+  bio: string | null
+  active: boolean
+  services_count?: number
+  created_at?: string
+  updated_at?: string
+}
+
+export interface ProfessionalService {
+  professional_id: string
+  service_id: string
+  created_at?: string
+}
+
+export interface CreateProfessionalPayload {
+  p_name: string
+  p_photo_url?: string | null
+  p_specialty?: string | null
+  p_bio?: string | null
+}
+
+export interface UpdateProfessionalPayload {
+  p_professional_id: string
+  p_name: string
+  p_photo_url?: string | null
+  p_specialty?: string | null
+  p_bio?: string | null
+}
+
 // ── Horário disponível ────────────────────────────────────────
 export interface AvailableSlot {
   start_at: string  // ISO 8601 timestamptz
@@ -45,6 +79,7 @@ export interface CreateAppointmentPayload {
   p_service_id: string
   p_start_at: string  // ISO 8601 timestamptz
   p_notes?: string
+  p_professional_id?: string | null
 }
 
 // ── Configurações da clínica / espaço ─────────────────────────
@@ -66,6 +101,16 @@ export interface ClinicSettings {
 export interface UpdateClinicSettingsPayload {
   p_clinic_name?: string
   clinic_name?: string
+  p_professional_name?: string
+  professional_name?: string
+  p_booking_enabled?: boolean
+  booking_enabled?: boolean
+  p_min_notice_hours?: number
+  min_notice_hours?: number
+  p_max_advance_days?: number
+  max_advance_days?: number
+  p_slot_interval_minutes?: number
+  slot_interval_minutes?: number
   [key: string]: unknown
 }
 
@@ -115,6 +160,8 @@ export interface AdminAppointment {
   service_id: string
   service_name: string
   duration_minutes: number
+  professional_id?: string | null
+  professional_name?: string | null
 }
 
 // ── Gestão Administrativa de Clientes ─────────────────────────

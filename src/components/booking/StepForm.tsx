@@ -40,7 +40,7 @@ export default function StepForm({ data, onChange, onNext, onBack }: StepFormPro
     <div className="space-y-8 animate-fade-in">
       <div>
         <p className="text-xs uppercase tracking-[0.2em] text-[#7D3B7C] font-semibold mb-1">
-          Etapa 4 de 5
+          Etapa 5 de 6
         </p>
         <h2 className="font-display text-3xl sm:text-4xl text-[#1C181D]">
           Informe seus dados de contato

@@ -1,4 +1,4 @@
-import type { Service, AvailableSlot, ClientData } from '@/types'
+import type { Service, AvailableSlot, ClientData, Professional } from '@/types'
 import Button from '@/components/ui/Button'
 import {
   formatDateDisplay,
@@ -9,6 +9,8 @@ import {
 
 interface StepReviewProps {
   service: Service
+  professional?: Professional | null
+  isAnyProfessional?: boolean
   date: string
   slot: AvailableSlot
   client: ClientData
@@ -21,6 +23,8 @@ interface StepReviewProps {
 
 export default function StepReview({
   service,
+  professional,
+  isAnyProfessional,
   date,
   slot,
   client,
@@ -34,18 +38,18 @@ export default function StepReview({
     <div className="space-y-8 animate-fade-in">
       <div>
         <p className="text-xs uppercase tracking-[0.2em] text-[#7D3B7C] font-semibold mb-1">
-          Etapa 5 de 5
+          Etapa 6 de 6
         </p>
         <h2 className="font-display text-3xl sm:text-4xl text-[#1C181D]">
           Revise e confirme seu agendamento
         </h2>
         <p className="text-sm text-[#756A73] font-light mt-1">
-          Confira as informações antes de finalizar.
+          Confira todas as informações com atenção antes de finalizar.
         </p>
       </div>
 
       <div className="max-w-xl bg-white rounded-3xl border border-[#EAE2DC] divide-y divide-[#EAE2DC] overflow-hidden shadow-2xs">
-        {/* Procedimento */}
+        {/* 1. Procedimento */}
         <div className="p-6 space-y-1">
           <span className="text-[10px] uppercase tracking-widest text-[#7D3B7C] font-semibold">
             Procedimento Escolhido
@@ -65,7 +69,63 @@ export default function StepReview({
           </div>
         </div>
 
-        {/* Data & Horário */}
+        {/* 2. Profissional */}
+        <div className="p-6 space-y-2 bg-[#FAF7F5]/50">
+          <span className="text-[10px] uppercase tracking-widest text-[#7D3B7C] font-semibold">
+            Profissional Designada
+          </span>
+
+          {isAnyProfessional ? (
+            <div className="flex items-center gap-3.5 pt-1">
+              <div className="w-11 h-11 rounded-full bg-[#FAF0F8] text-[#7D3B7C] border border-[#7D3B7C]/20 flex items-center justify-center shrink-0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-sm text-[#1C181D]">
+                  Qualquer profissional disponível
+                </p>
+                <p className="text-xs text-[#756A73] mt-0.5">
+                  Uma profissional qualificada da equipe será alocada para o seu atendimento.
+                </p>
+              </div>
+            </div>
+          ) : professional ? (
+            <div className="flex items-center gap-3.5 pt-1">
+              <div className="w-11 h-11 rounded-full border border-[#7D3B7C]/20 overflow-hidden bg-[#FAF0F8] flex items-center justify-center shrink-0">
+                {professional.photo_url ? (
+                  <img
+                    src={professional.photo_url}
+                    alt={professional.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="font-display font-semibold text-base text-[#7D3B7C]">
+                    {professional.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div>
+                <p className="font-semibold text-sm text-[#1C181D]">
+                  {professional.name}
+                </p>
+                {professional.specialty && (
+                  <p className="text-xs text-[#C8A882] font-medium mt-0.5">
+                    {professional.specialty}
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-[#756A73]">Equipe Espaço Pivotto</p>
+          )}
+        </div>
+
+        {/* 3. Data & Horário */}
         <div className="p-6 space-y-1 bg-[#FAF7F5]">
           <span className="text-[10px] uppercase tracking-widest text-[#7D3B7C] font-semibold">
             Data & Horário
@@ -78,7 +138,7 @@ export default function StepReview({
           </p>
         </div>
 
-        {/* Dados do Cliente */}
+        {/* 4. Dados da Cliente */}
         <div className="p-6 space-y-3">
           <span className="text-[10px] uppercase tracking-widest text-[#7D3B7C] font-semibold">
             Seus Dados

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import type { Service, AvailableSlot, ClientData } from '@/types'
+import type { Service, AvailableSlot, ClientData, Professional } from '@/types'
 import { useServices } from '@/hooks/useServices'
 import { useClinicSettings } from '@/hooks/useClinicSettings'
 import { createPublicAppointment } from '@/services/clinicService'
@@ -12,6 +12,7 @@ import {
 } from '@/utils/bookingCache'
 import BookingProgress from '@/components/booking/BookingProgress'
 import StepService from '@/components/booking/StepService'
+import StepProfessional from '@/components/booking/StepProfessional'
 import StepDate from '@/components/booking/StepDate'
 import StepSlot from '@/components/booking/StepSlot'
 import StepForm from '@/components/booking/StepForm'
@@ -23,6 +24,8 @@ const INITIAL_CLIENT: ClientData = { name: '', phone: '', email: '', notes: '' }
 interface BookingState {
   step: number
   service: Service | null
+  professional: Professional | null
+  isAnyProfessional: boolean
   date: string
   slot: AvailableSlot | null
   client: ClientData
@@ -35,6 +38,8 @@ interface BookingState {
 const INITIAL_STATE: BookingState = {
   step: 1,
   service: null,
+  professional: null,
+  isAnyProfessional: false,
   date: '',
   slot: null,
   client: INITIAL_CLIENT,
@@ -63,27 +68,55 @@ export default function Agendamento() {
     }
   }, [searchParams, services, servicesState])
 
+  // 1. Seleciona Procedimento -> limpa seleções subsequentes incompatíveis
   function selectService(service: Service) {
-    setBooking((prev) => ({
-      ...prev,
-      service,
-      date: '',
-      slot: null,
-      conflictError: null,
-      submitError: null,
-    }))
+    setBooking((prev) => {
+      const isSameService = prev.service?.id === service.id
+      return {
+        ...prev,
+        service,
+        // Se mudou de serviço, reseta profissional e horários
+        professional: isSameService ? prev.professional : null,
+        isAnyProfessional: isSameService ? prev.isAnyProfessional : false,
+        date: isSameService ? prev.date : '',
+        slot: isSameService ? prev.slot : null,
+        conflictError: null,
+        submitError: null,
+      }
+    })
   }
 
+  // 2. Seleciona Profissional ou "Qualquer Profissional"
+  function selectProfessional(prof: Professional | null, isAny: boolean) {
+    setBooking((prev) => {
+      const isSameChoice = isAny
+        ? prev.isAnyProfessional
+        : prev.professional?.id === prof?.id
+
+      return {
+        ...prev,
+        professional: prof,
+        isAnyProfessional: isAny,
+        // Se mudou a profissional, limpa o horário pois a grade muda
+        slot: isSameChoice ? prev.slot : null,
+        conflictError: null,
+        submitError: null,
+      }
+    })
+  }
+
+  // 3. Seleciona Data
   function selectDate(date: string) {
     setBooking((prev) => ({
       ...prev,
       date,
-      slot: null,
+      slot: prev.date === date ? prev.slot : null,
       conflictError: null,
       submitError: null,
     }))
   }
 
+  // 4. Seleciona Horário
   function selectSlot(slot: AvailableSlot) {
     setBooking((prev) => ({
       ...prev,
@@ -93,6 +126,7 @@ export default function Agendamento() {
     }))
   }
 
+  // 5. Atualiza Dados da Cliente
   function updateClient(client: ClientData) {
     setBooking((prev) => ({ ...prev, client }))
     setCachedClientData(client)
@@ -105,7 +139,7 @@ export default function Agendamento() {
   function goBack() {
     setBooking((prev) => ({
       ...prev,
-      step: prev.step - 1,
+      step: Math.max(1, prev.step - 1),
       submitError: null,
     }))
   }
@@ -118,8 +152,9 @@ export default function Agendamento() {
     }))
   }
 
+  // Confirmação final
   async function handleSubmit() {
-    const { service, slot, client } = booking
+    const { service, slot, client, professional, isAnyProfessional } = booking
     if (!service || !slot) return
 
     setBooking((prev) => ({
@@ -136,6 +171,8 @@ export default function Agendamento() {
         p_service_id: service.id,
         p_start_at: slot.start_at,
         p_notes: client.notes || undefined,
+        // Se for "Qualquer profissional", envia undefined (o backend atribui automaticamente)
+        p_professional_id: isAnyProfessional ? undefined : (professional?.id || undefined),
       })
 
       clearCachedClientData()
@@ -164,8 +201,7 @@ export default function Agendamento() {
     settings.booking_enabled === false
 
   return (
-    <div className="min-h-screen bg-[#FAF7F5] pt-28 sm:pt-36 pb-20">
-      
+    <div className="min-h-[calc(100vh-5rem)] bg-[#FAF7F5] pt-8 sm:pt-14 pb-20">
       {/* Banner Superior da Página */}
       <div className="max-w-4xl mx-auto px-5 sm:px-8 mb-8 text-center sm:text-left">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F4EDE8] text-[11px] uppercase tracking-wider text-[#7D3B7C] font-semibold mb-3">
@@ -195,7 +231,7 @@ export default function Agendamento() {
               href="https://wa.me/message/PTIHBB6DIPQTH1"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-8 py-3 text-xs uppercase tracking-wider font-semibold text-white bg-[#7D3B7C] hover:bg-[#672B66] rounded-full shadow-md transition-colors"
+              className="inline-flex items-center justify-center px-8 py-3 text-xs uppercase tracking-wider font-semibold text-white bg-[#7D3B7C] hover:bg-[#672B66] rounded-full shadow-md transition-colors cursor-pointer"
             >
               Falar com Josielly no WhatsApp
             </a>
@@ -207,6 +243,7 @@ export default function Agendamento() {
           <div className="bg-white/80 backdrop-blur-xs p-6 sm:p-10 lg:p-12 rounded-3xl border border-[#EAE2DC] shadow-sm">
             <BookingProgress currentStep={booking.step} />
 
+            {/* ETAPA 1: PROCEDIMENTO */}
             {booking.step === 1 && (
               <StepService
                 services={services}
@@ -217,9 +254,24 @@ export default function Agendamento() {
               />
             )}
 
+            {/* ETAPA 2: PROFISSIONAL */}
             {booking.step === 2 && booking.service && (
+              <StepProfessional
+                service={booking.service}
+                selected={booking.professional}
+                isAnyProfessional={booking.isAnyProfessional}
+                onSelect={selectProfessional}
+                onNext={goNext}
+                onBack={goBack}
+              />
+            )}
+
+            {/* ETAPA 3: DATA */}
+            {booking.step === 3 && booking.service && (
               <StepDate
                 service={booking.service}
+                professional={booking.professional}
+                isAnyProfessional={booking.isAnyProfessional}
                 selectedDate={booking.date}
                 onDateChange={selectDate}
                 onNext={goNext}
@@ -227,9 +279,12 @@ export default function Agendamento() {
               />
             )}
 
-            {booking.step === 3 && booking.service && booking.date && (
+            {/* ETAPA 4: HORÁRIO */}
+            {booking.step === 4 && booking.service && booking.date && (
               <StepSlot
                 service={booking.service}
+                professional={booking.professional}
+                isAnyProfessional={booking.isAnyProfessional}
                 date={booking.date}
                 selected={booking.slot}
                 onSelect={selectSlot}
@@ -239,7 +294,8 @@ export default function Agendamento() {
               />
             )}
 
-            {booking.step === 4 && (
+            {/* ETAPA 5: SEUS DADOS */}
+            {booking.step === 5 && (
               <StepForm
                 data={booking.client}
                 onChange={updateClient}
@@ -248,12 +304,15 @@ export default function Agendamento() {
               />
             )}
 
-            {booking.step === 5 &&
+            {/* ETAPA 6: REVISÃO */}
+            {booking.step === 6 &&
               booking.service &&
               booking.slot &&
               booking.date && (
                 <StepReview
                   service={booking.service}
+                  professional={booking.professional}
+                  isAnyProfessional={booking.isAnyProfessional}
                   date={booking.date}
                   slot={booking.slot}
                   client={booking.client}
@@ -261,13 +320,13 @@ export default function Agendamento() {
                   error={booking.submitError}
                   onConfirm={handleSubmit}
                   onBack={goBack}
-                  onChangeSlot={() => goToStep(3)}
+                  onChangeSlot={() => goToStep(4)}
                 />
               )}
           </div>
         )}
 
-        {/* Sucesso */}
+        {/* ETAPA 7: CONFIRMAÇÃO (SUCESSO) */}
         {booking.isSuccess &&
           booking.service &&
           booking.slot &&
@@ -275,6 +334,8 @@ export default function Agendamento() {
             <div className="bg-white p-6 sm:p-12 rounded-3xl border border-[#EAE2DC] shadow-sm">
               <StepSuccess
                 service={booking.service}
+                professional={booking.professional}
+                isAnyProfessional={booking.isAnyProfessional}
                 date={booking.date}
                 slot={booking.slot}
               />
@@ -294,7 +355,6 @@ export default function Agendamento() {
           </a>
         </div>
       </div>
-
     </div>
   )
 }

@@ -1,17 +1,28 @@
 import { Link } from 'react-router-dom'
-import type { Service, AvailableSlot } from '@/types'
+import type { Service, AvailableSlot, Professional } from '@/types'
 import { formatDateDisplay, formatTimeDisplay } from '@/utils/formatters'
 
 interface StepSuccessProps {
   service: Service
+  professional?: Professional | null
+  isAnyProfessional?: boolean
   date: string
   slot: AvailableSlot
 }
 
-export default function StepSuccess({ service, date, slot }: StepSuccessProps) {
+export default function StepSuccess({
+  service,
+  professional,
+  isAnyProfessional,
+  date,
+  slot,
+}: StepSuccessProps) {
+  const professionalLabel = isAnyProfessional
+    ? 'Qualquer profissional disponível'
+    : professional?.name ?? 'Equipe do Studio'
+
   return (
     <div className="py-10 sm:py-16 flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto">
-      
       {/* Ícone de Sucesso */}
       <div
         className="w-20 h-20 rounded-full bg-[#F9F0F7] border border-[#EBD5E8] flex items-center justify-center text-[#7D3B7C] shadow-sm"
@@ -49,10 +60,26 @@ export default function StepSuccess({ service, date, slot }: StepSuccessProps) {
           <p className="text-[10px] uppercase tracking-wider text-[#756A73] mb-0.5">Procedimento</p>
           <p className="font-display text-lg text-[#1C181D]">{service.name}</p>
         </div>
+
+        <div className="p-5">
+          <p className="text-[10px] uppercase tracking-wider text-[#756A73] mb-0.5">Profissional</p>
+          <div className="flex items-center gap-2.5 mt-0.5">
+            {professional?.photo_url && (
+              <img
+                src={professional.photo_url}
+                alt={professional.name}
+                className="w-6 h-6 rounded-full object-cover border border-[#7D3B7C]/20"
+              />
+            )}
+            <p className="text-sm font-medium text-[#7D3B7C]">{professionalLabel}</p>
+          </div>
+        </div>
+
         <div className="p-5">
           <p className="text-[10px] uppercase tracking-wider text-[#756A73] mb-0.5">Data</p>
           <p className="text-sm font-medium text-[#1C181D]">{formatDateDisplay(date)}</p>
         </div>
+
         <div className="p-5">
           <p className="text-[10px] uppercase tracking-wider text-[#756A73] mb-0.5">Horário de Início</p>
           <p className="text-sm font-medium text-[#7D3B7C]">{formatTimeDisplay(slot.start_at)}</p>
@@ -76,7 +103,6 @@ export default function StepSuccess({ service, date, slot }: StepSuccessProps) {
           Falar no WhatsApp
         </a>
       </div>
-
     </div>
   )
 }

@@ -138,7 +138,7 @@ export default function BridalSection() {
             href="https://wa.me/message/PTIHBB6DIPQTH1?text=Ol%C3%A1%20Josielly!%20Gostaria%20de%20conversar%20sobre%20a%20Experi%C3%AAncia%20Noivas%20no%20Espa%C3%A7o%20Pivotto."
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center px-9 py-4 text-sm font-semibold tracking-wider uppercase text-white bg-[#7D3B7C] hover:bg-[#672B66] rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5"
+            className="inline-flex items-center justify-center px-9 py-4 text-sm font-semibold tracking-wider uppercase text-white bg-[#7D3B7C] hover:bg-[#672B66] active:scale-98 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7D3B7C]"
           >
             Conversar sobre a Experiência Noivas no WhatsApp
           </a>

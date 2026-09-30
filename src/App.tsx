@@ -9,6 +9,7 @@ import AdminDashboard from '@/pages/admin/Dashboard'
 import AdminAgenda from '@/pages/admin/Agenda'
 import AdminClientes from '@/pages/admin/Clientes'
 import AdminServicos from '@/pages/admin/Servicos'
+import AdminProfissionais from '@/pages/admin/Profissionais'
 import AdminConfiguracoes from '@/pages/admin/Configuracoes'
 
 function ScrollToTop() {
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="agenda" element={<AdminAgenda />} />
           <Route path="clientes" element={<AdminClientes />} />
           <Route path="servicos" element={<AdminServicos />} />
+          <Route path="profissionais" element={<AdminProfissionais />} />
           <Route path="configuracoes" element={<AdminConfiguracoes />} />
         </Route>
 

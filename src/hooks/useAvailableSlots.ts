@@ -10,12 +10,13 @@ interface UseAvailableSlotsResult {
 }
 
 /**
- * Busca horários disponíveis para um serviço em uma data específica.
+ * Busca horários disponíveis para um serviço e opcionalmente uma profissional específica em uma data.
  * A disponibilidade é calculada exclusivamente no backend.
  */
 export function useAvailableSlots(
   serviceId: string,
   date: string,
+  professionalId?: string | null,
 ): UseAvailableSlotsResult {
   const [slots, setSlots] = useState<AvailableSlot[]>([])
   const [state, setState] = useState<LoadingState>('idle')
@@ -26,7 +27,7 @@ export function useAvailableSlots(
     setState('loading')
     setError(null)
     try {
-      const data = await getAvailableSlots(serviceId, date)
+      const data = await getAvailableSlots(serviceId, date, professionalId)
       setSlots(data)
       setState('success')
     } catch (err) {
@@ -34,7 +35,7 @@ export function useAvailableSlots(
       setState('error')
       setSlots([])
     }
-  }, [serviceId, date])
+  }, [serviceId, date, professionalId])
 
   useEffect(() => {
     load()

@@ -1,9 +1,11 @@
-import type { Service } from '@/types'
+import type { Service, Professional } from '@/types'
 import Button from '@/components/ui/Button'
 import { getTodayString, formatDateDisplay } from '@/utils/formatters'
 
 interface StepDateProps {
   service: Service
+  professional?: Professional | null
+  isAnyProfessional?: boolean
   selectedDate: string
   onDateChange: (date: string) => void
   onNext: () => void
@@ -12,6 +14,8 @@ interface StepDateProps {
 
 export default function StepDate({
   service,
+  professional,
+  isAnyProfessional,
   selectedDate,
   onDateChange,
   onNext,
@@ -19,17 +23,22 @@ export default function StepDate({
 }: StepDateProps) {
   const today = getTodayString()
 
+  const professionalLabel = isAnyProfessional
+    ? 'Qualquer profissional disponível'
+    : professional?.name
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
         <p className="text-xs uppercase tracking-[0.2em] text-[#7D3B7C] font-semibold mb-1">
-          Etapa 2 de 5
+          Etapa 3 de 6
         </p>
         <h2 className="font-display text-3xl sm:text-4xl text-[#1C181D]">
           Escolha a data do atendimento
         </h2>
         <p className="text-sm text-[#756A73] font-light mt-1">
-          Serviço selecionado: <strong className="font-medium text-[#1C181D]">{service.name}</strong>
+          <strong className="font-medium text-[#1C181D]">{service.name}</strong>
+          {professionalLabel && <span> · Profissional: <strong className="font-medium text-[#7D3B7C]">{professionalLabel}</strong></span>}
         </p>
       </div>
 
@@ -46,7 +55,7 @@ export default function StepDate({
           min={today}
           value={selectedDate}
           onChange={(e) => onDateChange(e.target.value)}
-          className="w-full px-4 py-3.5 text-sm border border-[#EAE2DC] rounded-xl bg-[#FAF7F5] text-[#1C181D] focus:outline-none focus:border-[#7D3B7C] focus:bg-white transition-colors"
+          className="w-full px-4 py-3.5 text-sm border border-[#EAE2DC] rounded-xl bg-[#FAF7F5] text-[#1C181D] focus:outline-none focus:border-[#7D3B7C] focus:bg-white transition-colors cursor-pointer"
         />
 
         {selectedDate && (
@@ -67,7 +76,7 @@ export default function StepDate({
           onClick={onBack}
           className="text-xs uppercase tracking-wider font-semibold text-[#756A73] hover:text-[#1C181D] transition-colors py-2 text-center sm:text-left cursor-pointer"
         >
-          ← Voltar para Serviços
+          ← Alterar Profissional
         </button>
         <Button onClick={onNext} disabled={!selectedDate} size="lg">
           Ver Horários Disponíveis →

@@ -1,4 +1,4 @@
-import type { Service, AvailableSlot } from '@/types'
+import type { Service, AvailableSlot, Professional } from '@/types'
 import { useAvailableSlots } from '@/hooks/useAvailableSlots'
 import Button from '@/components/ui/Button'
 import Loader from '@/components/ui/Loader'
@@ -8,6 +8,8 @@ import { getFriendlyError } from '@/utils/errorMessages'
 
 interface StepSlotProps {
   service: Service
+  professional?: Professional | null
+  isAnyProfessional?: boolean
   date: string
   selected: AvailableSlot | null
   onSelect: (slot: AvailableSlot) => void
@@ -18,6 +20,8 @@ interface StepSlotProps {
 
 export default function StepSlot({
   service,
+  professional,
+  isAnyProfessional,
   date,
   selected,
   onSelect,
@@ -25,19 +29,34 @@ export default function StepSlot({
   onBack,
   conflictError,
 }: StepSlotProps) {
-  const { slots, state, error, refetch } = useAvailableSlots(service.id, date)
+  // Se for "Qualquer profissional", passa null para que o backend consulte
+  // a disponibilidade combinada de todas as profissionais habilitadas
+  const targetProfessionalId = isAnyProfessional ? null : (professional?.id ?? null)
+
+  const { slots, state, error, refetch } = useAvailableSlots(
+    service.id,
+    date,
+    targetProfessionalId
+  )
+
+  const professionalLabel = isAnyProfessional
+    ? 'Qualquer profissional disponível'
+    : professional?.name
 
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
         <p className="text-xs uppercase tracking-[0.2em] text-[#7D3B7C] font-semibold mb-1">
-          Etapa 3 de 5
+          Etapa 4 de 6
         </p>
         <h2 className="font-display text-3xl sm:text-4xl text-[#1C181D]">
           Escolha o melhor horário
         </h2>
         <p className="text-sm text-[#756A73] font-light mt-1">
           {service.name} · {formatDateDisplay(date)}
+          {professionalLabel && (
+            <span> · <strong className="font-medium text-[#7D3B7C]">{professionalLabel}</strong></span>
+          )}
         </p>
       </div>
 
@@ -51,7 +70,7 @@ export default function StepSlot({
         </div>
       )}
 
-      {state === 'loading' && <Loader label="Consultando agenda do estúdio…" />}
+      {state === 'loading' && <Loader label="Consultando horários disponíveis…" />}
 
       {state === 'error' && (
         <ErrorMessage
@@ -62,23 +81,35 @@ export default function StepSlot({
 
       {state === 'success' && slots.length === 0 && (
         <div className="py-12 p-8 text-center bg-white rounded-2xl border border-[#EAE2DC] space-y-4">
+          <div className="w-12 h-12 rounded-full bg-[#FAF0F8] text-[#7D3B7C] flex items-center justify-center mx-auto text-xl">
+            📅
+          </div>
           <p className="text-sm text-[#756A73]">
-            Não encontramos horários disponíveis para esta data.
+            Não encontramos horários disponíveis para esta data
+            {professional ? ` com ${professional.name}` : ''}.
           </p>
-          <button
-            onClick={onBack}
-            className="text-xs uppercase tracking-wider font-semibold text-[#7D3B7C] underline hover:text-[#672B66] cursor-pointer"
-          >
-            ← Escolher outro dia no calendário
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button
+              onClick={onBack}
+              className="text-xs uppercase tracking-wider font-semibold text-[#7D3B7C] underline hover:text-[#672B66] cursor-pointer"
+            >
+              ← Escolher outro dia no calendário
+            </button>
+          </div>
         </div>
       )}
 
       {state === 'success' && slots.length > 0 && (
         <div className="bg-white p-6 sm:p-8 rounded-2xl border border-[#EAE2DC] space-y-4 shadow-2xs">
-          <p className="text-xs uppercase tracking-wider text-[#756A73] font-medium">
-            Horários Livres Encontrados:
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wider text-[#756A73] font-medium">
+              Horários Livres Encontrados:
+            </p>
+            <span className="text-xs font-semibold text-[#7D3B7C]">
+              {slots.length} {slots.length === 1 ? 'horário livre' : 'horários livres'}
+            </span>
+          </div>
+
           <div
             className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5"
             role="listbox"

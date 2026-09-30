@@ -2,97 +2,130 @@ export default function AboutSection() {
   return (
     <section
       id="sobre"
-      className="py-24 sm:py-32 bg-[#FAF7F5] relative overflow-hidden"
+      className="py-20 sm:py-28 lg:py-32 bg-[#FAF7F5] relative overflow-hidden"
       aria-labelledby="about-heading"
     >
-      <div className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+      {/* Elemento de iluminação ambiente sutil */}
+      <div
+        className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-[#EBD5E8]/25 blur-3xl pointer-events-none"
+        aria-hidden="true"
+      />
+
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 xl:gap-20 items-center">
           
-          {/* Imagem Editorial de Josielly */}
-          <div className="lg:col-span-5 relative order-2 lg:order-1">
-            <div className="relative mx-auto max-w-sm sm:max-w-md aspect-[3/4] rounded-3xl overflow-hidden shadow-xl border border-[#EAE2DC]">
+          {/* ── 1. RETRATO EDITORIAL DA PROFISSIONAL (5 colunas) ────────── */}
+          <div className="lg:col-span-5 relative order-2 lg:order-1 flex flex-col items-center">
+            {/* Moldura da Fotografia com Borda e Sombra Suave (Sem texto fundido na imagem) */}
+            <div className="relative w-full max-w-sm sm:max-w-md aspect-[3/4] rounded-3xl overflow-hidden shadow-xl border-4 border-white bg-white">
               <img
                 src="/images/about/josielly-studio.jpg"
-                alt="Josielly Pivotto no Espaço Pivotto em Redenção - PA"
-                className="w-full h-full object-cover object-center"
+                alt="Josielly Pivotto — Especialista em Cabelo, Maquiagem e Sobrancelha"
+                className="w-full h-full object-cover object-center transition-transform duration-700 hover:scale-[1.02]"
                 loading="lazy"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1C181D]/40 via-transparent to-transparent pointer-events-none" />
-              
-              <div className="absolute bottom-5 left-5 right-5 text-white">
-                <p className="font-display text-2xl font-light">Josielly Pivotto</p>
-                <p className="text-xs uppercase tracking-[0.2em] text-[#D4B896]">
-                  Fundadora & Especialista em Beleza
-                </p>
-              </div>
             </div>
 
-            {/* Fundo de respiro / moldura flutuante */}
+            {/* Plaqueta de Identificação com Alto Contraste abaixo da foto */}
+            <div className="mt-4 px-5 py-2.5 rounded-2xl bg-white border border-[#EAE2DC] shadow-xs flex items-center gap-3 w-full max-w-sm sm:max-w-md justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#7D3B7C]" />
+                <span className="text-xs uppercase tracking-wider font-semibold text-[#1C181D]">
+                  Josielly Pivotto
+                </span>
+              </div>
+              <span className="text-[11px] uppercase tracking-wider text-[#756A73] font-medium">
+                Redenção - PA
+              </span>
+            </div>
+
+            {/* Moldura de fundo sutil */}
             <div
-              className="absolute -bottom-6 -right-6 w-3/4 h-3/4 rounded-3xl border border-[#7D3B7C]/20 -z-10 hidden sm:block"
+              className="absolute -bottom-6 -right-6 w-3/4 h-3/4 rounded-3xl border border-[#7D3B7C]/20 -z-10 hidden sm:block pointer-events-none"
               aria-hidden="true"
             />
           </div>
 
-          {/* Conteúdo Editorial */}
-          <div className="lg:col-span-7 space-y-8 order-1 lg:order-2">
-            <div className="space-y-3">
-              <p className="text-xs uppercase tracking-[0.25em] text-[#7D3B7C] font-semibold">
+          {/* ── 2. CONTEÚDO EDITORIAL & CREDENCIAIS (7 colunas) ──────────── */}
+          <div className="lg:col-span-7 space-y-6 sm:space-y-8 order-1 lg:order-2">
+            
+            {/* Bloco de Nome e Especialização com Alto Contraste */}
+            <div className="space-y-2">
+              <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#FAF0F8] border border-[#EBD5E8] text-[11px] sm:text-xs uppercase tracking-[0.2em] text-[#7D3B7C] font-semibold">
                 Sobre a Profissional
-              </p>
+              </span>
+
+              {/* Nome Completo com Grande Presença Visual */}
               <h2
                 id="about-heading"
-                className="font-display text-3xl sm:text-5xl font-normal text-[#1C181D] leading-tight"
+                className="font-display text-4xl sm:text-5xl lg:text-6xl font-normal text-[#1C181D] tracking-tight leading-[1.08]"
               >
-                Realçando a sua beleza com propósito e dedicação.
+                Josielly Pivotto
               </h2>
+
+              {/* Função e Especialização com Destaque Nítido */}
+              <p className="text-xs sm:text-sm uppercase tracking-[0.18em] font-semibold text-[#7D3B7C]">
+                Cabelo · Maquiagem · Sobrancelha · Noivas
+              </p>
             </div>
 
-            <div className="space-y-5 text-base sm:text-lg text-[#756A73] font-light leading-relaxed">
+            {/* Filosofia de Atendimento */}
+            <div className="space-y-4 text-base sm:text-lg text-[#554A54] font-light leading-relaxed">
               <p>
-                No <strong className="font-medium text-[#1C181D]">Espaço Pivotto</strong>, 
+                No <strong className="font-semibold text-[#1C181D]">Espaço Pivotto</strong>, 
                 cada atendimento é concebido como uma experiência única. Acreditamos que a beleza não 
-                segue padrões universais — ela nasce do respeito aos traços, à textura e à personalidade de cada mulher.
+                segue moldes pré-definidos — ela nasce do respeito aos seus traços naturais, à textura única dos seus fios e à sua história.
               </p>
-              <p>
-                Com dedicação a cabelos, maquiagens e sobrancelhas, Josielly Pivotto combina técnicas 
-                modernas, produtos de alta performance e um olhar sensível para criar produções marcantes 
-                que encantam no dia a dia e brilham nos momentos mais especiais da sua vida.
+              <p className="text-sm sm:text-base text-[#756A73]">
+                Combinando técnicas contemporâneas de visagismo, cosméticos de alta performance e um olhar sensível, Josielly Pivotto cria produções memoráveis para o dia a dia, ensaios fotográficos e os momentos mais marcantes da sua vida.
               </p>
             </div>
 
-            {/* Pilares da Filosofia */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
-              <div className="p-5 rounded-2xl bg-white border border-[#EAE2DC] shadow-2xs">
-                <p className="font-display text-lg text-[#1C181D] mb-1">
-                  Atendimento Personalizado
+            {/* Pilares da Experiência */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div className="p-5 rounded-2xl bg-white border border-[#EAE2DC] shadow-2xs hover:border-[#7D3B7C]/40 hover:shadow-xs transition-all duration-200">
+                <div className="w-8 h-8 rounded-xl bg-[#FAF0F8] text-[#7D3B7C] flex items-center justify-center mb-3">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                </div>
+                <p className="font-display text-base font-medium text-[#1C181D] mb-1">
+                  Atendimento Exclusivo
                 </p>
                 <p className="text-xs text-[#756A73] leading-relaxed">
-                  Tempo reservado com exclusividade para você, sem pressa, com escuta atenta e diagnóstico cuidadoso.
+                  Tempo reservado com atenção total e personalizada, garantindo conforto e segurança do início ao fim.
                 </p>
               </div>
 
-              <div className="p-5 rounded-2xl bg-white border border-[#EAE2DC] shadow-2xs">
-                <p className="font-display text-lg text-[#1C181D] mb-1">
+              <div className="p-5 rounded-2xl bg-white border border-[#EAE2DC] shadow-2xs hover:border-[#7D3B7C]/40 hover:shadow-xs transition-all duration-200">
+                <div className="w-8 h-8 rounded-xl bg-[#FAF0F8] text-[#7D3B7C] flex items-center justify-center mb-3">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                </div>
+                <p className="font-display text-base font-medium text-[#1C181D] mb-1">
                   Cuidado em Cada Detalhe
                 </p>
                 <p className="text-xs text-[#756A73] leading-relaxed">
-                  Da saúde dos fios ao acabamento impecável da pele e alinhamento do olhar.
+                  Da saúde e cronograma dos fios ao acabamento impecável da pele e harmonia do olhar.
                 </p>
               </div>
             </div>
 
+            {/* Ação / Contato com Josielly */}
             <div className="pt-2 flex items-center gap-6">
               <a
                 href="https://wa.me/message/PTIHBB6DIPQTH1"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-semibold tracking-wider uppercase text-[#7D3B7C] hover:text-[#672B66] transition-colors"
+                className="group inline-flex items-center gap-2 text-xs sm:text-sm font-semibold tracking-wider uppercase text-[#7D3B7C] hover:text-[#672B66] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7D3B7C] rounded-lg"
               >
                 <span>Falar Diretamente com Josielly</span>
-                <span aria-hidden="true">→</span>
+                <span className="transform group-hover:translate-x-1 transition-transform duration-200" aria-hidden="true">→</span>
               </a>
             </div>
+
           </div>
 
         </div>

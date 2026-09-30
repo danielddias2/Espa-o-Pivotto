@@ -1,9 +1,10 @@
 const STEPS = [
-  { n: 1, label: 'Serviço' },
-  { n: 2, label: 'Data'    },
-  { n: 3, label: 'Horário' },
-  { n: 4, label: 'Dados'   },
-  { n: 5, label: 'Revisão' },
+  { n: 1, label: 'Procedimento' },
+  { n: 2, label: 'Profissional' },
+  { n: 3, label: 'Data'         },
+  { n: 4, label: 'Horário'      },
+  { n: 5, label: 'Seus Dados'   },
+  { n: 6, label: 'Revisão'      },
 ]
 
 interface BookingProgressProps {
