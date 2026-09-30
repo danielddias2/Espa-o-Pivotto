@@ -44,14 +44,9 @@ export default function StepService({
           <p className="text-sm text-[#756A73]">
             Nenhum serviço disponível para agendamento online no momento.
           </p>
-          <a
-            href="https://wa.me/message/PTIHBB6DIPQTH1"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block text-xs font-semibold uppercase tracking-wider text-[#7D3B7C] underline"
-          >
-            Falar pelo WhatsApp para consultar horários →
-          </a>
+          <p className="text-xs text-[#A1A1AA]">
+            Por favor, retorne em breve ou consulte nossa equipe no estúdio.
+          </p>
         </div>
       )}
 

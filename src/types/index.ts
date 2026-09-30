@@ -39,6 +39,7 @@ export interface Professional {
   specialty: string | null
   bio: string | null
   active: boolean
+  whatsapp?: string | null
   services_count?: number
   created_at?: string
   updated_at?: string
@@ -55,6 +56,7 @@ export interface CreateProfessionalPayload {
   p_photo_url?: string | null
   p_specialty?: string | null
   p_bio?: string | null
+  p_whatsapp?: string | null
 }
 
 export interface UpdateProfessionalPayload {
@@ -63,6 +65,7 @@ export interface UpdateProfessionalPayload {
   p_photo_url?: string | null
   p_specialty?: string | null
   p_bio?: string | null
+  p_whatsapp?: string | null
 }
 
 // ── Horário disponível ────────────────────────────────────────

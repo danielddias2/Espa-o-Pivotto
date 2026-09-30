@@ -393,8 +393,8 @@ export default function AdminProfissionais() {
                     </p>
                   )}
 
-                  {/* Procedimentos vinculados */}
-                  <div className="pt-1">
+                  {/* Procedimentos vinculados & WhatsApp */}
+                  <div className="pt-1 flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg bg-[#FAF0F8] text-[#7D3B7C] font-medium border border-[#7D3B7C]/15">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M6 3h12l4 6-10 13L2 9Z" />
@@ -403,6 +403,17 @@ export default function AdminProfissionais() {
                       </svg>
                       {servicesCount} {servicesCount === 1 ? 'procedimento' : 'procedimentos'}
                     </span>
+
+                    {prof.whatsapp ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg bg-emerald-50 text-emerald-700 font-medium border border-emerald-200">
+                        <span>💬</span>
+                        <span className="truncate max-w-[130px]">{prof.whatsapp}</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-md bg-stone-100 text-stone-500 font-normal">
+                        WhatsApp Studio
+                      </span>
+                    )}
                   </div>
                 </div>
 

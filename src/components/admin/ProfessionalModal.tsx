@@ -37,6 +37,7 @@ export default function ProfessionalModal({
   // Campos do formulário
   const [name, setName] = useState('')
   const [specialty, setSpecialty] = useState('')
+  const [whatsapp, setWhatsapp] = useState('')
   const [bio, setBio] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -86,6 +87,7 @@ export default function ProfessionalModal({
     if (professional) {
       setName(professional.name || '')
       setSpecialty(professional.specialty || '')
+      setWhatsapp(professional.whatsapp || '')
       setBio(professional.bio || '')
       setPhotoUrl(professional.photo_url || '')
       setPhotoPreview(professional.photo_url || null)
@@ -104,6 +106,7 @@ export default function ProfessionalModal({
     } else {
       setName('')
       setSpecialty('')
+      setWhatsapp('')
       setBio('')
       setPhotoUrl('')
       setPhotoPreview(null)
@@ -221,6 +224,7 @@ export default function ProfessionalModal({
 
       const cleanName = name.trim()
       const cleanSpecialty = specialty.trim() || null
+      const cleanWhatsapp = whatsapp.trim() || null
       const cleanBio = bio.trim() || null
 
       let savedProfessional: Professional
@@ -231,6 +235,7 @@ export default function ProfessionalModal({
           p_name: cleanName,
           p_photo_url: finalPhotoUrl,
           p_specialty: cleanSpecialty,
+          p_whatsapp: cleanWhatsapp,
           p_bio: cleanBio,
         })
 
@@ -242,6 +247,7 @@ export default function ProfessionalModal({
           p_name: cleanName,
           p_photo_url: finalPhotoUrl,
           p_specialty: cleanSpecialty,
+          p_whatsapp: cleanWhatsapp,
           p_bio: cleanBio,
         })
 
@@ -428,6 +434,27 @@ export default function ProfessionalModal({
               placeholder="Ex: Especialista em Penteados & Noivas"
               className="w-full px-4 py-3 text-sm border border-[#EAE2DC] bg-white rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C] shadow-2xs"
             />
+          </div>
+
+          {/* 4. WhatsApp Específico */}
+          <div className="space-y-1">
+            <label
+              htmlFor="prof-whatsapp"
+              className="block text-xs uppercase tracking-wider text-[#756A73] font-semibold"
+            >
+              WhatsApp Direto <span className="text-[10px] text-[#A1A1AA] lowercase font-normal">(opcional)</span>
+            </label>
+            <input
+              id="prof-whatsapp"
+              type="tel"
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              placeholder="Ex: (94) 98765-4321"
+              className="w-full px-4 py-3 text-sm border border-[#EAE2DC] bg-white rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C] shadow-2xs"
+            />
+            <p className="text-[11px] text-[#A1A1AA]">
+              Número que receberá as mensagens das clientes ao agendarem com esta profissional. Se em branco, usa o WhatsApp geral do estúdio.
+            </p>
           </div>
 
           {/* 4. Bio / Apresentação */}

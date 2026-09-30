@@ -266,6 +266,7 @@ export async function createProfessional(
     p_photo_url: payload.p_photo_url ?? null,
     p_specialty: payload.p_specialty ?? null,
     p_bio: payload.p_bio ?? null,
+    p_whatsapp: payload.p_whatsapp ?? null,
   })
   if (error) throw error
   return data as Professional
@@ -280,6 +281,7 @@ export async function updateProfessional(
     p_photo_url: payload.p_photo_url ?? null,
     p_specialty: payload.p_specialty ?? null,
     p_bio: payload.p_bio ?? null,
+    p_whatsapp: payload.p_whatsapp ?? null,
   })
   if (error) throw error
   return data as Professional

@@ -1,18 +1,14 @@
 const STEPS = [
-  { n: 1, label: 'Procedimento' },
-  { n: 2, label: 'Profissional' },
-  { n: 3, label: 'Data'         },
-  { n: 4, label: 'Horário'      },
-  { n: 5, label: 'Seus Dados'   },
-  { n: 6, label: 'Revisão'      },
+  { n: 1, label: '1. Procedimento' },
+  { n: 2, label: '2. Profissional & WhatsApp' },
 ]
 
 interface BookingProgressProps {
-  currentStep: number // 1–5
+  currentStep: number // 1 ou 2
 }
 
 export default function BookingProgress({ currentStep }: BookingProgressProps) {
-  const pct = ((currentStep - 1) / (STEPS.length - 1)) * 100
+  const pct = currentStep === 1 ? 50 : 100
 
   return (
     <>
@@ -37,7 +33,7 @@ export default function BookingProgress({ currentStep }: BookingProgressProps) {
 
       {/* Desktop: círculos + labels + conexões */}
       <div
-        className="hidden sm:flex items-center justify-between mb-12 max-w-xl mx-auto"
+        className="hidden sm:flex items-center justify-between mb-10 max-w-md mx-auto"
         role="list"
         aria-label="Etapas do agendamento"
       >
@@ -77,7 +73,7 @@ export default function BookingProgress({ currentStep }: BookingProgressProps) {
               {i < STEPS.length - 1 && (
                 <div
                   className={[
-                    'flex-1 h-0.5 mx-3 mb-6 transition-colors duration-500',
+                    'flex-1 h-0.5 mx-4 mb-6 transition-colors duration-500',
                     done ? 'bg-[#7D3B7C]' : 'bg-[#EAE2DC]',
                   ].join(' ')}
                   aria-hidden="true"
