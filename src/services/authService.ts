@@ -1,67 +1,45 @@
 import { supabase } from '@/lib/supabase'
 
 /**
- * Verifica de forma segura se o usuário autenticado possui privilégios de administrador.
+ * Verifica de forma autoritativa no Supabase se o usuário autenticado é administrador.
  * 
- * Estratégia em camadas:
- * 1. RPC `is_admin()` no Supabase (verificação autoritativa no banco).
- * 2. Consulta direta na tabela `public.admin_users`.
- * 3. Validação defensiva de e-mail administrativo oficial / metadata.
+ * Fluxo estrito:
+ * 1. Obter usuário autenticado da sessão atual (`supabase.auth.getUser()`).
+ * 2. Se não houver usuário ou houver erro na sessão, retornar false.
+ * 3. Chamar a RPC segura `public.is_admin()` no banco (executada com SECURITY DEFINER).
+ * 4. Se a RPC retornar true, retornar true.
+ * 5. Se a RPC retornar false, retornar false.
+ * 6. Se ocorrer erro real na RPC, registrar log seguro (sem dados sensíveis) e retornar false.
+ * 
+ * Não utiliza e-mails hardcoded, variáveis de ambiente ou metadados de cliente para autorização.
  */
 export async function checkIsAdmin(): Promise<boolean> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return false
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
 
-    // 1. Verificação via RPC is_admin() (preferencial)
-    try {
-      const { data, error } = await supabase.rpc('is_admin')
-      if (!error && typeof data === 'boolean') {
-        return data
-      }
-    } catch {
-      // Ignora falha de RPC se a função ainda não tiver sido criada no Supabase
+    if (userError || !user) {
+      return false
     }
 
-    // 2. Verificação direta na tabela admin_users
-    try {
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('id, role')
-        .eq('id', user.id)
-        .maybeSingle()
+    const { data, error } = await supabase.rpc('is_admin')
 
-      if (!error && data) {
-        return true
-      }
-    } catch {
-      // Ignora se tabela ainda não existir
+    if (error) {
+      // Registra a mensagem de erro da RPC sem vazar tokens, senhas ou JWTs
+      console.error('[Auth] Falha ao verificar administrador:', error.message || error)
+      return false
     }
 
-    // 3. Fallback defensivo por e-mail administrativo oficial ou metadata
-    const officialAdminEmails = [
-      'contato@espacopivotto.com.br',
-      'admin@espacopivotto.com.br',
-      (import.meta.env.VITE_ADMIN_EMAIL as string | undefined)?.toLowerCase(),
-    ].filter(Boolean) as string[]
-
-    const userEmail = user.email?.toLowerCase().trim()
-    if (userEmail && officialAdminEmails.includes(userEmail)) {
-      return true
-    }
-
-    // Metadados explícitos configurados no Supabase Auth
-    if (
-      user.app_metadata?.role === 'admin' ||
-      user.app_metadata?.role === 'superadmin' ||
-      user.user_metadata?.role === 'admin'
-    ) {
+    if (data === true) {
       return true
     }
 
     return false
   } catch (err) {
-    console.error('[Espaço Pivotto][checkIsAdmin] Erro na verificação:', err)
+    const message = err instanceof Error ? err.message : 'Erro inesperado na verificação'
+    console.error('[Auth] Erro inesperado ao verificar administrador:', message)
     return false
   }
 }

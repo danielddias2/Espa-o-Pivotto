@@ -97,7 +97,7 @@ export default function AdminLogin() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 text-sm border border-[#E2D8D0] bg-[#FAF7F5] rounded-xl text-[#2D242D] placeholder:text-[#A898A6] focus:outline-none focus:border-[#7D3B7C] focus:bg-white transition-all"
-              placeholder="admin@espacopivotto.com.br"
+              placeholder="seu-email@dominio.com"
             />
           </div>
 
