@@ -9,6 +9,7 @@ import {
 import { slugify, isValidSlug, formatCurrency } from '@/utils/formatters'
 import { getFriendlyError } from '@/utils/errorMessages'
 import Button from '@/components/ui/Button'
+import ImageCropEditor from '@/components/admin/ImageCropEditor'
 
 interface ServiceModalProps {
   isOpen: boolean
@@ -51,11 +52,15 @@ export default function ServiceModal({
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Estado de imagem
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [croppedFile, setCroppedFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [removeImage, setRemoveImage] = useState(false)
   const [showUrlInput, setShowUrlInput] = useState(false)
   const [uploading, setUploading] = useState(false)
+
+  // Estado do editor de crop
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
+  const [showCropEditor, setShowCropEditor] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
@@ -84,24 +89,36 @@ export default function ServiceModal({
       setImagePreview(null)
     }
 
-    setSelectedFile(null)
+    setCroppedFile(null)
     setRemoveImage(false)
     setShowUrlInput(false)
     setSubmitError(null)
     setErrors({})
     setUploading(false)
+    setCropSrc(null)
+    setShowCropEditor(false)
   }, [isOpen, service])
+
+  // Limpa object URL ao desmontar ou trocar de imagem
+  useEffect(() => {
+    return () => {
+      if (cropSrc && cropSrc.startsWith('blob:')) {
+        URL.revokeObjectURL(cropSrc)
+      }
+    }
+  }, [cropSrc])
 
   useEffect(() => {
     if (!isOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !submitting) {
+      // Não fechar com Escape se o editor de crop estiver aberto
+      if (e.key === 'Escape' && !submitting && !showCropEditor) {
         onClose()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, submitting, onClose])
+  }, [isOpen, submitting, showCropEditor, onClose])
 
   if (!isOpen) return null
 
@@ -137,19 +154,44 @@ export default function ServiceModal({
     }
 
     setSubmitError(null)
-    setSelectedFile(file)
+
+    // Em vez de salvar diretamente, abre o editor de enquadramento
+    const objectUrl = URL.createObjectURL(file)
+    setCropSrc(objectUrl)
+    setShowCropEditor(true)
+
+    // Limpa o input para permitir reselecionar o mesmo arquivo
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  function handleCropApply(file: File) {
+    // Cria preview a partir do arquivo gerado pelo crop
+    const previewUrl = URL.createObjectURL(file)
+    setCroppedFile(file)
+    setImagePreview(previewUrl)
     setRemoveImage(false)
 
-    // Cria preview local
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      setImagePreview(event.target?.result as string)
+    // Limpa o crop editor
+    if (cropSrc && cropSrc.startsWith('blob:')) {
+      URL.revokeObjectURL(cropSrc)
     }
-    reader.readAsDataURL(file)
+    setCropSrc(null)
+    setShowCropEditor(false)
+  }
+
+  function handleCropCancel() {
+    // Cancela o enquadramento — mantém imagem atual intacta
+    if (cropSrc && cropSrc.startsWith('blob:')) {
+      URL.revokeObjectURL(cropSrc)
+    }
+    setCropSrc(null)
+    setShowCropEditor(false)
   }
 
   function handleRemoveImage() {
-    setSelectedFile(null)
+    setCroppedFile(null)
     setImagePreview(null)
     setForm((prev) => ({ ...prev, image_url: '' }))
     setRemoveImage(true)
@@ -206,11 +248,11 @@ export default function ServiceModal({
 
       let finalImageUrl: string | null = form.image_url.trim() || null
 
-      // Se um novo arquivo foi selecionado, envia para o Supabase Storage
-      if (selectedFile) {
+      // Se existe um arquivo enquadrado pronto para upload
+      if (croppedFile) {
         setUploading(true)
         try {
-          finalImageUrl = await uploadServiceImage(selectedFile, service?.id)
+          finalImageUrl = await uploadServiceImage(croppedFile, service?.id)
         } catch (uploadErr) {
           const msg = uploadErr instanceof Error ? uploadErr.message : 'Falha no upload da imagem'
           setSubmitError(msg)
@@ -271,7 +313,7 @@ export default function ServiceModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby={modalTitleId}
-      onClick={onClose}
+      onClick={showCropEditor ? undefined : onClose}
     >
       <div
         className="bg-[#FAF7F5] border border-[#EAE2DC] w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col my-8"
@@ -281,279 +323,304 @@ export default function ServiceModal({
         <div className="px-6 sm:px-8 pt-7 pb-5 border-b border-[#EAE2DC] bg-white flex items-start justify-between shrink-0">
           <div>
             <p className="text-[10px] tracking-[0.2em] uppercase text-[#7D3B7C] font-semibold mb-1">
-              {isEdit ? 'Editar Procedimento' : 'Novo Procedimento'}
+              {showCropEditor
+                ? 'Enquadrar Imagem'
+                : isEdit
+                  ? 'Editar Procedimento'
+                  : 'Novo Procedimento'}
             </p>
             <h2
               id={modalTitleId}
               className="font-display text-2xl text-[#1C181D]"
             >
-              {isEdit ? form.name || 'Editar serviço' : 'Cadastrar serviço'}
+              {showCropEditor
+                ? 'Ajuste o enquadramento'
+                : isEdit
+                  ? form.name || 'Editar serviço'
+                  : 'Cadastrar serviço'}
             </h2>
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={showCropEditor ? handleCropCancel : onClose}
             disabled={submitting}
             className="text-[#756A73] hover:text-[#1C181D] p-1.5 transition-colors cursor-pointer disabled:opacity-50"
-            aria-label="Fechar formulário"
+            aria-label={showCropEditor ? 'Cancelar enquadramento' : 'Fechar formulário'}
           >
             ✕
           </button>
         </div>
 
-        {/* Formulário com scroll */}
-        <form onSubmit={handleSubmit} noValidate className="p-6 sm:p-8 space-y-5 overflow-y-auto max-h-[calc(85vh-130px)]">
-          {submitError && (
-            <div
-              role="alert"
-              className="p-4 bg-rose-50 border border-rose-200 text-xs sm:text-sm text-rose-700 rounded-xl leading-relaxed"
-            >
-              {submitError}
-            </div>
-          )}
-
-          {/* 1. Imagem do Procedimento */}
-          <div className="space-y-3">
-            <label className="block text-xs uppercase tracking-wider text-[#756A73] font-semibold">
-              Foto do Procedimento <span className="text-[10px] text-[#A1A1AA] lowercase font-normal">(opcional)</span>
-            </label>
-
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 bg-white border border-[#EAE2DC] rounded-2xl">
-              {/* Preview */}
-              <div className="relative w-24 h-24 rounded-xl border-2 border-[#7D3B7C]/20 overflow-hidden bg-[#FAF0F8] flex items-center justify-center shrink-0 shadow-xs">
-                {imagePreview ? (
-                  <img
-                    src={imagePreview}
-                    alt="Preview do procedimento"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      ;(e.target as HTMLImageElement).style.display = 'none'
-                    }}
-                  />
-                ) : (
-                  <span className="text-[#7D3B7C] opacity-50">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <path d="m21 15-5-5L5 21" />
-                    </svg>
-                  </span>
-                )}
-                {uploading && (
-                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                    <div className="w-5 h-5 border-2 border-[#7D3B7C] border-t-transparent rounded-full animate-spin" />
-                  </div>
-                )}
+        {/* ── EDITOR DE CROP ───────────────────────────────────── */}
+        {showCropEditor && cropSrc ? (
+          <div className="p-6 sm:p-8 overflow-y-auto max-h-[calc(85vh-130px)]">
+            <ImageCropEditor
+              imageSrc={cropSrc}
+              onApply={handleCropApply}
+              onCancel={handleCropCancel}
+            />
+          </div>
+        ) : (
+          /* ── FORMULÁRIO ───────────────────────────────────────── */
+          <form onSubmit={handleSubmit} noValidate className="p-6 sm:p-8 space-y-5 overflow-y-auto max-h-[calc(85vh-130px)]">
+            {submitError && (
+              <div
+                role="alert"
+                className="p-4 bg-rose-50 border border-rose-200 text-xs sm:text-sm text-rose-700 rounded-xl leading-relaxed"
+              >
+                {submitError}
               </div>
+            )}
 
-              {/* Controles de Imagem */}
-              <div className="flex-1 space-y-2 text-center sm:text-left">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={handleFileSelect}
-                />
+            {/* 1. Imagem do Procedimento */}
+            <div className="space-y-3">
+              <label className="block text-xs uppercase tracking-wider text-[#756A73] font-semibold">
+                Foto do Procedimento <span className="text-[10px] text-[#A1A1AA] lowercase font-normal">(opcional)</span>
+              </label>
 
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={submitting}
-                    className="px-3.5 py-1.5 text-xs font-semibold bg-[#FAF0F8] text-[#7D3B7C] hover:bg-[#F3E5F1] rounded-xl border border-[#7D3B7C]/20 transition-colors cursor-pointer disabled:opacity-50"
-                  >
-                    {imagePreview ? 'Trocar imagem' : 'Enviar imagem'}
-                  </button>
-
-                  {imagePreview && (
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      disabled={submitting}
-                      className="px-3.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl border border-rose-200 transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                      Remover imagem
-                    </button>
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 bg-white border border-[#EAE2DC] rounded-2xl">
+                {/* Preview */}
+                <div className="relative w-full sm:w-36 rounded-xl border-2 border-[#7D3B7C]/20 overflow-hidden bg-[#FAF0F8] flex items-center justify-center shrink-0 shadow-xs" style={{ aspectRatio: '16/9' }}>
+                  {imagePreview ? (
+                    <img
+                      src={imagePreview}
+                      alt="Preview do procedimento"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        ;(e.target as HTMLImageElement).style.display = 'none'
+                      }}
+                    />
+                  ) : (
+                    <span className="text-[#7D3B7C] opacity-50">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path d="m21 15-5-5L5 21" />
+                      </svg>
+                    </span>
                   )}
-
-                  <button
-                    type="button"
-                    onClick={() => setShowUrlInput((v) => !v)}
-                    className="text-[11px] text-[#736371] hover:text-[#2D242D] underline ml-1 cursor-pointer"
-                  >
-                    {showUrlInput ? 'Ocultar URL' : 'Informar URL'}
-                  </button>
+                  {uploading && (
+                    <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-[#7D3B7C] border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
                 </div>
 
-                <p className="text-[11px] text-[#A1A1AA]">
-                  Formatos aceitos: JPG, PNG ou WebP (máx. 5 MB).
-                </p>
+                {/* Controles de Imagem */}
+                <div className="flex-1 space-y-2 text-center sm:text-left">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
 
-                {uploading && (
-                  <p className="text-[11px] text-[#7D3B7C] font-medium animate-pulse">
-                    Enviando imagem...
-                  </p>
-                )}
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={submitting}
+                      className="px-3.5 py-1.5 text-xs font-semibold bg-[#FAF0F8] text-[#7D3B7C] hover:bg-[#F3E5F1] rounded-xl border border-[#7D3B7C]/20 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      {imagePreview ? 'Trocar imagem' : 'Enviar imagem'}
+                    </button>
 
-                {showUrlInput && (
-                  <div className="pt-2 animate-fade-in">
-                    <input
-                      type="url"
-                      placeholder="https://exemplo.com/foto.jpg"
-                      value={form.image_url}
-                      onChange={(e) => {
-                        setForm((prev) => ({ ...prev, image_url: e.target.value }))
-                        setImagePreview(e.target.value || null)
-                        setSelectedFile(null)
-                        setRemoveImage(false)
-                      }}
-                      className="w-full px-3 py-1.5 text-xs border border-[#EAE2DC] bg-[#FAF7F5] rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C]"
-                    />
+                    {imagePreview && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        disabled={submitting}
+                        className="px-3.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl border border-rose-200 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        Remover imagem
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setShowUrlInput((v) => !v)}
+                      className="text-[11px] text-[#736371] hover:text-[#2D242D] underline ml-1 cursor-pointer"
+                    >
+                      {showUrlInput ? 'Ocultar URL' : 'Informar URL'}
+                    </button>
                   </div>
+
+                  <p className="text-[11px] text-[#A1A1AA]">
+                    Formatos aceitos: JPG, PNG ou WebP (máx. 5 MB).
+                  </p>
+
+                  {uploading && (
+                    <p className="text-[11px] text-[#7D3B7C] font-medium animate-pulse">
+                      Enviando imagem...
+                    </p>
+                  )}
+
+                  {croppedFile && !uploading && (
+                    <p className="text-[11px] text-emerald-600 font-medium">
+                      ✓ Imagem enquadrada e pronta para salvar.
+                    </p>
+                  )}
+
+                  {showUrlInput && (
+                    <div className="pt-2 animate-fade-in">
+                      <input
+                        type="url"
+                        placeholder="https://exemplo.com/foto.jpg"
+                        value={form.image_url}
+                        onChange={(e) => {
+                          setForm((prev) => ({ ...prev, image_url: e.target.value }))
+                          setImagePreview(e.target.value || null)
+                          setCroppedFile(null)
+                          setRemoveImage(false)
+                        }}
+                        className="w-full px-3 py-1.5 text-xs border border-[#EAE2DC] bg-[#FAF7F5] rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C]"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Nome do Procedimento */}
+            <div className="space-y-1">
+              <label
+                htmlFor="svc-name"
+                className="block text-xs uppercase tracking-wider text-[#756A73] font-medium"
+              >
+                Nome do procedimento <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="svc-name"
+                type="text"
+                required
+                autoFocus
+                value={form.name}
+                onChange={handleNameChange}
+                placeholder="Ex: Penteado Noiva, Cronograma Capilar..."
+                className="w-full px-3.5 py-2.5 text-sm border border-[#EAE2DC] bg-white rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C]"
+              />
+              {errors.name && (
+                <p className="text-xs text-red-600">{errors.name}</p>
+              )}
+            </div>
+
+            {/* 3. Slug */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="svc-slug"
+                  className="block text-xs uppercase tracking-wider text-[#756A73] font-medium"
+                >
+                  Slug identificador (URL) <span className="text-red-500">*</span>
+                </label>
+                {!touchedSlug && form.name && (
+                  <span className="text-[10px] text-[#7D3B7C] tracking-wider">
+                    gerado automaticamente
+                  </span>
+                )}
+              </div>
+              <input
+                id="svc-slug"
+                type="text"
+                required
+                value={form.slug}
+                onChange={handleSlugChange}
+                placeholder="ex: penteado-noiva"
+                className="w-full px-3.5 py-2.5 text-sm font-mono border border-[#EAE2DC] bg-white rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C]"
+              />
+              {errors.slug && (
+                <p className="text-xs text-red-600">{errors.slug}</p>
+              )}
+            </div>
+
+            {/* 4. Duração e Preço */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label
+                  htmlFor="svc-duration"
+                  className="block text-xs uppercase tracking-wider text-[#756A73] font-medium"
+                >
+                  Duração (minutos) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="svc-duration"
+                  type="number"
+                  min="5"
+                  step="5"
+                  required
+                  value={form.duration_minutes}
+                  onChange={(e) => {
+                    setForm({ ...form, duration_minutes: e.target.value })
+                    if (errors.duration_minutes) setErrors({ ...errors, duration_minutes: '' })
+                  }}
+                  className="w-full px-3.5 py-2.5 text-sm border border-[#EAE2DC] bg-white rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C]"
+                />
+                {errors.duration_minutes && (
+                  <p className="text-xs text-red-600">{errors.duration_minutes}</p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <label
+                  htmlFor="svc-price"
+                  className="block text-xs uppercase tracking-wider text-[#756A73] font-medium"
+                >
+                  Preço (R$) <span className="text-[10px] text-[#A1A1AA] lowercase">(opcional)</span>
+                </label>
+                <input
+                  id="svc-price"
+                  type="text"
+                  value={form.price}
+                  onChange={(e) => {
+                    setForm({ ...form, price: e.target.value })
+                    if (errors.price) setErrors({ ...errors, price: '' })
+                  }}
+                  placeholder="Ex: 250,00"
+                  className="w-full px-3.5 py-2.5 text-sm border border-[#EAE2DC] bg-white rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C]"
+                />
+                {hasValidPrice && (
+                  <p className="text-[11px] text-[#1C181D] font-medium">
+                    {formatCurrency(parsedPrice)}
+                  </p>
                 )}
               </div>
             </div>
-          </div>
 
-          {/* 2. Nome do Procedimento */}
-          <div className="space-y-1">
-            <label
-              htmlFor="svc-name"
-              className="block text-xs uppercase tracking-wider text-[#756A73] font-medium"
-            >
-              Nome do procedimento <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="svc-name"
-              type="text"
-              required
-              autoFocus
-              value={form.name}
-              onChange={handleNameChange}
-              placeholder="Ex: Penteado Noiva, Cronograma Capilar..."
-              className="w-full px-3.5 py-2.5 text-sm border border-[#EAE2DC] bg-white rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C]"
-            />
-            {errors.name && (
-              <p className="text-xs text-red-600">{errors.name}</p>
-            )}
-          </div>
-
-          {/* 3. Slug */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="svc-slug"
-                className="block text-xs uppercase tracking-wider text-[#756A73] font-medium"
-              >
-                Slug identificador (URL) <span className="text-red-500">*</span>
-              </label>
-              {!touchedSlug && form.name && (
-                <span className="text-[10px] text-[#7D3B7C] tracking-wider">
-                  gerado automaticamente
-                </span>
-              )}
-            </div>
-            <input
-              id="svc-slug"
-              type="text"
-              required
-              value={form.slug}
-              onChange={handleSlugChange}
-              placeholder="ex: penteado-noiva"
-              className="w-full px-3.5 py-2.5 text-sm font-mono border border-[#EAE2DC] bg-white rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C]"
-            />
-            {errors.slug && (
-              <p className="text-xs text-red-600">{errors.slug}</p>
-            )}
-          </div>
-
-          {/* 4. Duração e Preço */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* 5. Descrição */}
             <div className="space-y-1">
               <label
-                htmlFor="svc-duration"
+                htmlFor="svc-desc"
                 className="block text-xs uppercase tracking-wider text-[#756A73] font-medium"
               >
-                Duração (minutos) <span className="text-red-500">*</span>
+                Descrição <span className="text-[10px] text-[#A1A1AA] lowercase">(opcional)</span>
               </label>
-              <input
-                id="svc-duration"
-                type="number"
-                min="5"
-                step="5"
-                required
-                value={form.duration_minutes}
-                onChange={(e) => {
-                  setForm({ ...form, duration_minutes: e.target.value })
-                  if (errors.duration_minutes) setErrors({ ...errors, duration_minutes: '' })
-                }}
-                className="w-full px-3.5 py-2.5 text-sm border border-[#EAE2DC] bg-white rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C]"
+              <textarea
+                id="svc-desc"
+                rows={3}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Descreva os diferenciais e como o atendimento é realizado..."
+                className="w-full px-3.5 py-2.5 text-sm border border-[#EAE2DC] bg-white rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C] resize-none"
               />
-              {errors.duration_minutes && (
-                <p className="text-xs text-red-600">{errors.duration_minutes}</p>
-              )}
             </div>
 
-            <div className="space-y-1">
-              <label
-                htmlFor="svc-price"
-                className="block text-xs uppercase tracking-wider text-[#756A73] font-medium"
+            {/* Botões de Ação */}
+            <div className="pt-3 border-t border-[#EAE2DC] flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={submitting}
+                className="px-4 py-2 text-xs font-semibold uppercase tracking-wider border border-[#EAE2DC] text-[#756A73] hover:text-[#1C181D] rounded-full transition-colors cursor-pointer"
               >
-                Preço (R$) <span className="text-[10px] text-[#A1A1AA] lowercase">(opcional)</span>
-              </label>
-              <input
-                id="svc-price"
-                type="text"
-                value={form.price}
-                onChange={(e) => {
-                  setForm({ ...form, price: e.target.value })
-                  if (errors.price) setErrors({ ...errors, price: '' })
-                }}
-                placeholder="Ex: 250,00"
-                className="w-full px-3.5 py-2.5 text-sm border border-[#EAE2DC] bg-white rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C]"
-              />
-              {hasValidPrice && (
-                <p className="text-[11px] text-[#1C181D] font-medium">
-                  {formatCurrency(parsedPrice)}
-                </p>
-              )}
+                Cancelar
+              </button>
+              <Button type="submit" isLoading={submitting} size="sm">
+                {isEdit ? 'Salvar alterações' : 'Criar procedimento'}
+              </Button>
             </div>
-          </div>
-
-          {/* 5. Descrição */}
-          <div className="space-y-1">
-            <label
-              htmlFor="svc-desc"
-              className="block text-xs uppercase tracking-wider text-[#756A73] font-medium"
-            >
-              Descrição <span className="text-[10px] text-[#A1A1AA] lowercase">(opcional)</span>
-            </label>
-            <textarea
-              id="svc-desc"
-              rows={3}
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="Descreva os diferenciais e como o atendimento é realizado..."
-              className="w-full px-3.5 py-2.5 text-sm border border-[#EAE2DC] bg-white rounded-xl text-[#1C181D] focus:outline-none focus:border-[#7D3B7C] resize-none"
-            />
-          </div>
-
-          {/* Botões de Ação */}
-          <div className="pt-3 border-t border-[#EAE2DC] flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              className="px-4 py-2 text-xs font-semibold uppercase tracking-wider border border-[#EAE2DC] text-[#756A73] hover:text-[#1C181D] rounded-full transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <Button type="submit" isLoading={submitting} size="sm">
-              {isEdit ? 'Salvar alterações' : 'Criar procedimento'}
-            </Button>
-          </div>
-        </form>
+          </form>
+        )}
       </div>
     </div>
   )
