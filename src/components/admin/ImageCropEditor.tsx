@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import Cropper from 'react-easy-crop'
 import type { Area } from 'react-easy-crop'
+import 'react-easy-crop/react-easy-crop.css'
 
 // ── Constantes ────────────────────────────────────────────────
 const CROP_ASPECT = 16 / 9
@@ -93,6 +94,10 @@ export default function ImageCropEditor({
     []
   )
 
+  const handleZoomChange = useCallback((newZoom: number) => {
+    setZoom(Number(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newZoom)).toFixed(2)))
+  }, [])
+
   async function handleApply() {
     if (!croppedAreaPixels) return
 
@@ -117,9 +122,13 @@ export default function ImageCropEditor({
   }
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-4 animate-fade-in select-none">
       {/* Área de Corte */}
-      <div className="relative w-full rounded-2xl overflow-hidden border-2 border-[#7D3B7C]/30 bg-[#1C181D]" style={{ aspectRatio: '16/9' }}>
+      <div
+        className="relative w-full h-64 sm:h-80 md:h-96 rounded-2xl overflow-hidden border-2 border-[#7D3B7C]/30 bg-[#1C181D] touch-none"
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+      >
         <Cropper
           image={imageSrc}
           crop={crop}
@@ -127,34 +136,45 @@ export default function ImageCropEditor({
           aspect={CROP_ASPECT}
           minZoom={MIN_ZOOM}
           maxZoom={MAX_ZOOM}
+          zoomSpeed={0.8}
+          zoomWithScroll={true}
+          restrictPosition={true}
+          showGrid={true}
+          objectFit="cover"
           onCropChange={setCrop}
-          onZoomChange={setZoom}
+          onZoomChange={handleZoomChange}
           onCropComplete={onCropComplete}
-          restrictPosition
-          showGrid
-          objectFit="contain"
           classes={{
             containerClassName: 'rounded-2xl',
           }}
           style={{
+            containerStyle: {
+              touchAction: 'none',
+              cursor: 'grab',
+            },
+            mediaStyle: {
+              maxWidth: 'none',
+              maxHeight: 'none',
+            },
             cropAreaStyle: {
-              border: '2px solid rgba(125, 59, 124, 0.6)',
+              border: '2px solid rgba(125, 59, 124, 0.85)',
               borderRadius: '12px',
+              boxShadow: '0 0 0 9999em rgba(0, 0, 0, 0.65)',
             },
           }}
         />
       </div>
 
       {/* Controle de Zoom */}
-      <div className="flex items-center gap-3 px-1">
+      <div className="flex items-center gap-3 px-1 pt-1">
         <button
           type="button"
-          onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z - ZOOM_STEP))}
+          onClick={() => handleZoomChange(zoom - ZOOM_STEP)}
           disabled={zoom <= MIN_ZOOM || processing}
-          className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-[#EAE2DC] text-[#7D3B7C] hover:bg-[#FAF0F8] transition-colors disabled:opacity-40 shrink-0 cursor-pointer"
+          className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-[#EAE2DC] text-[#7D3B7C] hover:bg-[#FAF0F8] transition-colors disabled:opacity-40 shrink-0 cursor-pointer shadow-xs active:scale-95"
           aria-label="Reduzir zoom"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
         </button>
@@ -165,26 +185,26 @@ export default function ImageCropEditor({
           max={MAX_ZOOM}
           step={0.01}
           value={zoom}
-          onChange={(e) => setZoom(Number(e.target.value))}
+          onChange={(e) => handleZoomChange(Number(e.target.value))}
           disabled={processing}
-          className="flex-1 h-1.5 bg-[#EAE2DC] rounded-full appearance-none cursor-pointer accent-[#7D3B7C] disabled:opacity-40"
+          className="flex-1 h-2 bg-[#EAE2DC] rounded-full appearance-none cursor-pointer accent-[#7D3B7C] disabled:opacity-40"
           aria-label="Zoom"
         />
 
         <button
           type="button"
-          onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z + ZOOM_STEP))}
+          onClick={() => handleZoomChange(zoom + ZOOM_STEP)}
           disabled={zoom >= MAX_ZOOM || processing}
-          className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-[#EAE2DC] text-[#7D3B7C] hover:bg-[#FAF0F8] transition-colors disabled:opacity-40 shrink-0 cursor-pointer"
+          className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-[#EAE2DC] text-[#7D3B7C] hover:bg-[#FAF0F8] transition-colors disabled:opacity-40 shrink-0 cursor-pointer shadow-xs active:scale-95"
           aria-label="Aumentar zoom"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
         </button>
 
-        <span className="text-[10px] text-[#A1A1AA] font-mono tabular-nums w-10 text-right shrink-0">
+        <span className="text-xs text-[#756A73] font-mono tabular-nums w-12 text-right shrink-0 font-medium">
           {Math.round(zoom * 100)}%
         </span>
       </div>
@@ -196,18 +216,18 @@ export default function ImageCropEditor({
         </p>
       )}
 
-      {/* Dica Mobile */}
-      <p className="text-[10px] text-[#A1A1AA] text-center">
-        Arraste para reposicionar · Use os controles ou scroll/pinch para zoom
+      {/* Dica de Uso */}
+      <p className="text-[11px] text-[#A1A1AA] text-center">
+        Arraste a foto para escolher o enquadramento · Ajuste o zoom pelos botões, barra ou pinça no celular
       </p>
 
       {/* Botões de Ação */}
-      <div className="flex items-center justify-end gap-3 pt-1 border-t border-[#EAE2DC]">
+      <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#EAE2DC]">
         <button
           type="button"
           onClick={onCancel}
           disabled={processing}
-          className="px-4 py-2 text-xs font-semibold uppercase tracking-wider border border-[#EAE2DC] text-[#756A73] hover:text-[#1C181D] rounded-full transition-colors cursor-pointer disabled:opacity-50"
+          className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider border border-[#EAE2DC] text-[#756A73] hover:text-[#1C181D] rounded-full transition-colors cursor-pointer disabled:opacity-50"
         >
           Cancelar
         </button>
@@ -215,7 +235,7 @@ export default function ImageCropEditor({
           type="button"
           onClick={handleApply}
           disabled={processing || !croppedAreaPixels}
-          className="px-5 py-2 text-xs font-semibold uppercase tracking-wider bg-[#7D3B7C] text-white rounded-full hover:bg-[#672B66] transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+          className="px-6 py-2.5 text-xs font-semibold uppercase tracking-wider bg-[#7D3B7C] text-white rounded-full hover:bg-[#672B66] transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer shadow-xs active:scale-95"
         >
           {processing ? (
             <>
