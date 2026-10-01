@@ -10,11 +10,13 @@ export default function Footer() {
           {/* Coluna da Marca */}
           <div className="lg:col-span-5 space-y-5">
             <Link to="/" className="inline-block" aria-label="Espaço Pivotto">
-              <img
-                src="/images/logo/logo-clean.png"
-                alt="Espaço Pivotto — Josielly Pivotto"
-                className="h-9 w-auto"
-              />
+              <div className="bg-[#252026] border border-white/[0.08] px-3.5 py-2 rounded-xl inline-flex items-center">
+                <img
+                  src="/images/logo/logo-clean.png"
+                  alt="Espaço Pivotto — Josielly Pivotto"
+                  className="h-7 sm:h-[30px] w-auto"
+                />
+              </div>
             </Link>
             <p className="text-sm text-[#A89FA7] font-light max-w-sm leading-relaxed">
               Realçando a sua beleza com propósito. Cuidado individualizado,
